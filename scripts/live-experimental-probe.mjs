@@ -21,7 +21,7 @@ const transport = new StdioClientTransport({
   env: { ...process.env, PS_MCP_APPROVAL_MODE: "auto" },
   stderr: "pipe"
 });
-const client = new Client({ name: "photoshop-experimental-live-probe", version: "2.0.0" });
+const client = new Client({ name: "photoshop-experimental-live-probe", version: "2.0.1" });
 await client.connect(transport);
 
 const connectionDeadline = Date.now() + 30_000;

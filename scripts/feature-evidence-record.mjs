@@ -198,7 +198,7 @@ const transport = new StdioClientTransport({
   env: { ...process.env, PS_MCP_APPROVAL_MODE: "auto" },
   stderr: "pipe",
 });
-const client = new Client({ name: "photoshop-feature-evidence", version: "2.0.0" });
+const client = new Client({ name: "photoshop-feature-evidence", version: "2.0.1" });
 let created = false;
 let closeRequestId = null;
 try {

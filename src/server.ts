@@ -166,7 +166,7 @@ export class PhotoshopFullMcpServer {
     this.policy = new PolicyEngine(config);
     this.bridge = new BridgeServer(config, this.jobs);
     this.server = new Server(
-      { name: "photoshop-full-mcp", version: "2.0.0" },
+      { name: "photoshop-full-mcp", version: "2.0.1" },
       {
         capabilities: { tools: {} },
         instructions:
@@ -426,7 +426,7 @@ export class PhotoshopFullMcpServer {
       const live = await this.bridge.dispatch("host.describe", {});
       runtime = live.ok ? live.data : live.error;
     }
-    return result({ serverVersion: "2.0.0", approvalMode: this.config.approvalMode, bridge, installed, ...(runtime !== undefined ? { runtime } : {}) });
+    return result({ serverVersion: "2.0.1", approvalMode: this.config.approvalMode, bridge, installed, ...(runtime !== undefined ? { runtime } : {}) });
   }
 
   private assertBridgeAvailable(): void {

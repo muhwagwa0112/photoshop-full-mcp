@@ -41,7 +41,7 @@ const transport = new StdioClientTransport({
   env: { ...process.env, PS_MCP_APPROVAL_MODE: "auto" },
   stderr: "pipe",
 });
-const client = new Client({ name: "photoshop-live-export-matrix", version: "2.0.0" });
+const client = new Client({ name: "photoshop-live-export-matrix", version: "2.0.1" });
 let created = false;
 const exports = [];
 let initialState;

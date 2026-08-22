@@ -259,7 +259,7 @@ export async function captureLiveEvidence({ commandId, commandArgs = {}, outputP
       env: { ...process.env, PS_MCP_VALIDATION: "confirm" },
       stderr: "pipe"
     });
-    client = new Client({ name: "photoshop-evidence-recorder", version: "2.0.0" });
+    client = new Client({ name: "photoshop-evidence-recorder", version: "2.0.1" });
     await client.connect(transport);
   }
 

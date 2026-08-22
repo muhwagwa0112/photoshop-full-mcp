@@ -29,7 +29,7 @@ const transport = new StdioClientTransport({
   env: { ...process.env, PS_MCP_APPROVAL_MODE: "auto" },
   stderr: "pipe",
 });
-const client = new Client({ name: "photoshop-owned-document-cleanup", version: "2.0.0" });
+const client = new Client({ name: "photoshop-owned-document-cleanup", version: "2.0.1" });
 const closed = [];
 
 try {
