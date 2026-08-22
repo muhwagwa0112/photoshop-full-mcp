@@ -15,9 +15,9 @@ Close Codex before installing so the next launch discovers the new MCP registrat
 
 Open the [latest release](https://github.com/muhwagwa0112/photoshop-full-mcp/releases/latest) and download:
 
-- `photoshop-full-mcp-v2.0.0-windows.zip`
+- `photoshop-full-mcp-v2.0.1-windows.zip`
 
-The release also publishes `photoshop-full-mcp-v2.0.0-windows.zip.manifest.json` and its `.sig`. An installed trusted version verifies those files before downloading or extracting an update. The `.sha256` asset is retained only as a convenient corruption check.
+The release also publishes `photoshop-full-mcp-v2.0.1-windows.zip.manifest.json` and its `.sig`. An installed trusted version verifies those files before downloading or extracting an update. The `.sha256` asset is retained only as a convenient corruption check.
 
 Extract the ZIP. The source-code **Download ZIP** menu shown below is a fallback for contributors; ordinary users should prefer the release asset because it already contains the production runtime and CCX package.
 
@@ -25,7 +25,7 @@ Extract the ZIP. The source-code **Download ZIP** menu shown below is a fallback
 
 ## 3. Install the MCP server
 
-Open PowerShell in the extracted `photoshop-full-mcp-2.0.0` folder:
+Open PowerShell in the extracted `photoshop-full-mcp-2.0.1` folder:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\Install.ps1
@@ -34,7 +34,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\Install.ps1
 The installer:
 
 - requires Node.js 20 or later;
-- copies a self-contained runtime to `%LOCALAPPDATA%\PS_MCP\app\versions\2.0.0`;
+- copies a self-contained runtime to `%LOCALAPPDATA%\PS_MCP\app\versions\2.0.1`;
 - installs reusable lifecycle tools under `%LOCALAPPDATA%\PS_MCP\app\tools`;
 - registers `photoshop_full_mcp` with Codex using the installed entry point;
 - leaves an existing `photoshop_mcp` registration unchanged;
@@ -46,7 +46,7 @@ The downloaded folder can be deleted after a successful install.
 
 Recommended route:
 
-1. Double-click `photoshop-full-mcp-v2.0.0.ccx` in the extracted release folder.
+1. Double-click `photoshop-full-mcp-v2.0.1.ccx` in the extracted release folder.
 2. Accept Adobe's local UXP plugin installation prompt.
 3. Restart Photoshop.
 
@@ -81,7 +81,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "$env:LOCALAPPDATA\PS_MCP\ap
 Update queries the configured GitHub release, verifies the RSA-signed release manifest with the public key installed by the previous trusted version, then downloads the exact archive bound by that signature. It verifies the archive name, size, and SHA-256 before extraction and performs the same transactional install. To update from an already-downloaded archive, keep its `.manifest.json` and `.manifest.json.sig` sidecars beside it:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File "$env:LOCALAPPDATA\PS_MCP\app\tools\Update.ps1" -PackagePath .\photoshop-full-mcp-v2.0.0-windows.zip
+powershell -NoProfile -ExecutionPolicy Bypass -File "$env:LOCALAPPDATA\PS_MCP\app\tools\Update.ps1" -PackagePath .\photoshop-full-mcp-v2.0.1-windows.zip
 ```
 
 ## Uninstall

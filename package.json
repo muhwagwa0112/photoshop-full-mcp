@@ -1,6 +1,6 @@
 {
   "name": "photoshop-full-mcp",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "private": true,
   "description": "Capability-gated MCP server and UXP bridge for Adobe Photoshop",
   "type": "module",

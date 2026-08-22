@@ -453,7 +453,7 @@ async function hostDescribe() {
     locale: hostInfo.uiLocale || null,
     uxp: uxpVersions,
     apiVersion: 2,
-    pluginVersion: "2.0.0",
+    pluginVersion: "2.0.1",
     protocol: "ps-mcp-bridge/3",
     executeAsModal: typeof core.executeAsModal === "function",
     runtimeProbes: {

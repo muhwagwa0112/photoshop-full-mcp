@@ -18,15 +18,15 @@ Photoshop Full MCP v2 is a local, capability-gated MCP server for Photoshop. It 
 
 Prerequisites: Windows 10/11, Photoshop 24 or later, [Node.js 20 or later](https://nodejs.org/), and Codex Desktop or the Codex CLI. Photoshop 2026 (27.9) is the reference host.
 
-1. Download `photoshop-full-mcp-v2.0.0-windows.zip` from the [latest release](https://github.com/muhwagwa0112/photoshop-full-mcp/releases/latest), then extract it. The adjacent signed manifest and signature authenticate future in-app updates; the `.sha256` file is an optional corruption check.
-2. Open PowerShell in the extracted `photoshop-full-mcp-2.0.0` folder and run:
+1. Download `photoshop-full-mcp-v2.0.1-windows.zip` from the [latest release](https://github.com/muhwagwa0112/photoshop-full-mcp/releases/latest), then extract it. The adjacent signed manifest and signature authenticate future in-app updates; the `.sha256` file is an optional corruption check.
+2. Open PowerShell in the extracted `photoshop-full-mcp-2.0.1` folder and run:
 
    ```powershell
    powershell -NoProfile -ExecutionPolicy Bypass -File .\Install.ps1
    ```
 
    The installer verifies the bundled runtime, installs it under `%LOCALAPPDATA%\PS_MCP`, and registers a separate `photoshop_full_mcp` server. The checkout/download folder is no longer needed afterward.
-3. Double-click the included `photoshop-full-mcp-v2.0.0.ccx` to install the Photoshop plugin. If CCX installation is unavailable, use Adobe UXP Developer Tools and select the installed manifest shown by Doctor.
+3. Double-click the included `photoshop-full-mcp-v2.0.1.ccx` to install the Photoshop plugin. If CCX installation is unavailable, use Adobe UXP Developer Tools and select the installed manifest shown by Doctor.
 4. Restart Codex, open Photoshop, then choose **Plugins > Photoshop Full MCP Bridge**.
 5. In Codex, call `photoshop_pairing_begin`, enter the complete `port-code` value shown by the trusted Windows dialog in the Photoshop panel, and call `photoshop_host_describe`. A response with `bridge.connected: true` is the first-success check.
 

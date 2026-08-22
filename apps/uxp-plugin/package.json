@@ -1,7 +1,7 @@
 {
   "name": "photoshop-full-mcp-uxp",
   "private": true,
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "UXP-side authenticated bridge for Photoshop Full MCP v2",
   "scripts": {
     "check": "node scripts/check.cjs && node scripts/bridge-check.cjs && node scripts/commands-check.cjs"
