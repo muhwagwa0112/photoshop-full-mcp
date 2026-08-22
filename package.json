@@ -23,6 +23,9 @@
     "test:contract": "node scripts/mcp-contract-smoke.mjs",
     "test:live:export": "node scripts/live-export-matrix.mjs",
     "cleanup:owned-documents": "node scripts/cleanup-owned-documents.mjs",
+    "uxp:package": "powershell -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\Build-Ccx.ps1",
+    "release:build": "powershell -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\Build-Release.ps1",
+    "release:verify": "powershell -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\Verify-Release.ps1",
     "start": "node dist/src/index.js"
   },
   "engines": {

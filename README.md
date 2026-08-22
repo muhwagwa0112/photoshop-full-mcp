@@ -14,6 +14,30 @@
 
 Photoshop Full MCP v2 is a local, capability-gated MCP server for Photoshop. It targets the installed Photoshop 2026 (27.9) while avoiding version and install-path assumptions.
 
+## Quick Start for Windows
+
+Prerequisites: Windows 10/11, Photoshop 24 or later, [Node.js 20 or later](https://nodejs.org/), and Codex Desktop or the Codex CLI. Photoshop 2026 (27.9) is the reference host.
+
+1. Download `photoshop-full-mcp-v2.0.0-windows.zip` and its `.sha256` file from the [latest release](https://github.com/muhwagwa0112/photoshop-full-mcp/releases/latest), then extract the ZIP.
+2. Open PowerShell in the extracted `photoshop-full-mcp-2.0.0` folder and run:
+
+   ```powershell
+   powershell -NoProfile -ExecutionPolicy Bypass -File .\Install.ps1
+   ```
+
+   The installer verifies the bundled runtime, installs it under `%LOCALAPPDATA%\PS_MCP`, and registers a separate `photoshop_full_mcp` server. The checkout/download folder is no longer needed afterward.
+3. Double-click the included `photoshop-full-mcp-v2.0.0.ccx` to install the Photoshop plugin. If CCX installation is unavailable, use Adobe UXP Developer Tools and select the installed manifest shown by Doctor.
+4. Restart Codex, open Photoshop, then choose **Plugins > Photoshop Full MCP Bridge**.
+5. In Codex, call `photoshop_pairing_begin`, enter the six-digit code in the Photoshop panel, and call `photoshop_host_describe`. A response with `bridge.connected: true` is the first-success check.
+
+Run Doctor at any time:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File "$env:LOCALAPPDATA\PS_MCP\app\tools\Doctor.ps1"
+```
+
+The default approval mode is automatic. Normal editing commands do not require one-by-one approval clicks. See the illustrated [Windows installation guide](docs/INSTALL.md) and [troubleshooting guide](docs/TROUBLESHOOTING.md) for update, removal, and recovery steps.
+
 It does **not** claim that every Photoshop UI feature is scriptable. The catalog separates:
 
 - `supported`: implemented and proven by a live Photoshop fixture on the target host
@@ -38,24 +62,31 @@ The broad feature inventory is in `catalog/features.json`. Executable contracts 
 
 Current audited state: 101 command contracts (`87 supported`, `1 experimental`, `0 unverified`, `11 requires_user`, `2 unavailable`) and 52 feature groups (`21 supported`, `1 experimental`, `0 unverified`, `10 requires_user`, `20 unavailable`). A command or feature group is promoted to `supported` only after its signed live Photoshop 27.9 fixture passes. Invalid inherited Generative Fill and Neural Filter descriptors are explicitly unavailable, and malformed or unallowlisted raw descriptors are rejected server-side so they cannot open Photoshop's unknown-command dialog.
 
-## Install on this PC
+## Install from source
+
+Release ZIP installation above is recommended. Contributors can instead clone the repository and run:
 
 ```powershell
-npm install --no-audit --no-fund
-npm run build
+npm ci --no-audit --no-fund
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Install-Local.ps1
 ```
 
-The installer registers `photoshop_full_mcp` alongside the existing `photoshop_mcp`. It does not remove or edit the old package.
+The compatibility wrapper builds once, copies a self-contained production runtime to `%LOCALAPPDATA%\PS_MCP`, and registers that installed copy. Moving or deleting the source checkout afterward does not break the MCP server. The installer registers `photoshop_full_mcp` alongside an existing `photoshop_mcp`; it does not remove or edit the old package.
 
-Load the UXP plugin once:
+For the UXP plugin, run `npm run uxp:package` and install the generated CCX, or load the installed manifest reported by Doctor in Adobe UXP Developer Tools. Optionally choose an export folder in the panel. Without one, `document.export` uses the authenticated server-owned default export folder.
 
-1. Open **Adobe UXP Developer Tools**.
-2. Select **Add Plugin**.
-3. Choose `<repo-root>\apps\uxp-plugin\manifest.json`.
-4. Click **Load** for **Photoshop Full MCP Bridge**.
-5. In Codex, call `photoshop_pairing_begin` on `photoshop_full_mcp`, then copy the six-digit code from the local Windows dialog into the Photoshop panel. `photoshop_host_describe` intentionally never returns the code.
-6. Optionally choose an export folder in the panel. Without one, `document.export` uses the authenticated server-owned default export folder.
+## Update and uninstall
+
+```powershell
+# Download, verify, and install the newest GitHub release
+powershell -NoProfile -ExecutionPolicy Bypass -File "$env:LOCALAPPDATA\PS_MCP\app\tools\Update.ps1"
+
+# Remove the installed runtime and Codex registration; preserve pairing and exports
+powershell -NoProfile -ExecutionPolicy Bypass -File "$env:LOCALAPPDATA\PS_MCP\app\tools\Uninstall.ps1"
+
+# Also remove pairing state and exports
+powershell -NoProfile -ExecutionPolicy Bypass -File "$env:LOCALAPPDATA\PS_MCP\app\tools\Uninstall.ps1" -RemoveUserData
+```
 
 ## Safe usage sequence
 

@@ -160,6 +160,7 @@ export class PhotoshopFullMcpServer {
   private readonly tools = new Map<string, RegisteredTool>();
   private readonly idempotency = new Map<string, McpEnvelope>();
   private readonly approvalJobs = new Map<string, { commandId: string; scope: unknown }>();
+  private bridgeStartError?: string;
 
   private constructor(private readonly config: ServerConfig, private readonly catalog: CommandCatalog) {
     this.policy = new PolicyEngine(config);
@@ -185,8 +186,13 @@ export class PhotoshopFullMcpServer {
   }
 
   async start(): Promise<void> {
-    const port = await this.bridge.start();
-    process.stderr.write(`[photoshop-full-mcp] bridge listening on 127.0.0.1:${port}\n`);
+    try {
+      const port = await this.bridge.start();
+      process.stderr.write(`[photoshop-full-mcp] bridge listening on 127.0.0.1:${port}\n`);
+    } catch (error) {
+      this.bridgeStartError = error instanceof Error ? error.message : String(error);
+      process.stderr.write(`[photoshop-full-mcp] bridge unavailable: ${this.bridgeStartError}; MCP read-only diagnostics remain available\n`);
+    }
     await this.server.connect(new StdioServerTransport());
   }
 
@@ -221,6 +227,7 @@ export class PhotoshopFullMcpServer {
       "Display the short-lived bridge pairing code in a trusted local Windows dialog. The code is never returned to the MCP client.",
       objectSchema(),
       async () => {
+        this.assertBridgeAvailable();
         await this.bridge.showPairingDialog();
         return result({ displayed: true, paired: this.bridge.status().paired, note: "The local pairing dialog was closed" });
       },
@@ -411,7 +418,8 @@ export class PhotoshopFullMcpServer {
   }
 
   private async hostDescribe(): Promise<ToolResult> {
-    const bridge = this.bridge.status(false);
+    const status = this.bridge.status(false);
+    const bridge = this.bridgeStartError ? { ...status, unavailableReason: this.bridgeStartError } : status;
     const installed = await discoverInstalledPhotoshop();
     let runtime: unknown;
     if (bridge.connected) {
@@ -421,14 +429,25 @@ export class PhotoshopFullMcpServer {
     return result({ serverVersion: "2.0.0", approvalMode: this.config.approvalMode, bridge, installed, ...(runtime !== undefined ? { runtime } : {}) });
   }
 
+  private assertBridgeAvailable(): void {
+    if (this.bridgeStartError) {
+      throw new PhotoshopMcpError("HOST_ERROR", `Photoshop bridge listener is unavailable: ${this.bridgeStartError}`);
+    }
+  }
+
+  private async dispatchBridge(kind: string, payload: JsonObject, timeoutMs?: number) {
+    this.assertBridgeAvailable();
+    return this.bridge.dispatch(kind, payload, timeoutMs);
+  }
+
   private async bridgeTool(kind: string, payload: JsonObject): Promise<ToolResult> {
-    const response = await this.bridge.dispatch(kind, payload);
+    const response = await this.dispatchBridge(kind, payload);
     if (!response.ok) throw new PhotoshopMcpError("HOST_ERROR", response.error?.message ?? `${kind} failed`, response.error);
     return result(response.data ?? { ok: true });
   }
 
   private async preview(args: JsonObject): Promise<ToolResult> {
-    const response = await this.bridge.dispatch("preview.get", { maxEdge: args.max_edge ?? 1024 });
+    const response = await this.dispatchBridge("preview.get", { maxEdge: args.max_edge ?? 1024 });
     if (!response.ok) throw new PhotoshopMcpError("HOST_ERROR", response.error?.message ?? "Preview failed", response.error);
     const data = response.data as { base64?: string; mimeType?: string; preview?: { base64?: string; mimeType?: string }; [key: string]: unknown } | undefined;
     const preview = data?.preview ?? data;
@@ -463,7 +482,7 @@ export class PhotoshopFullMcpServer {
       const before = command.verification !== "none" ? prerequisiteState : undefined;
       const host = needsHostPrerequisiteState(command) ? await this.requireBridgeData("host.describe", {}) : undefined;
       assertCommandPrerequisites(command, prerequisiteState, host);
-      const raw = await this.bridge.dispatch("command.execute", {
+      const raw = await this.dispatchBridge("command.execute", {
         commandId,
         args: this.dispatchArgs(commandId, args),
         dialogMode: input.dialog_mode ?? "silent",
@@ -494,7 +513,7 @@ export class PhotoshopFullMcpServer {
   }
 
   private async requireBridgeData(kind: string, payload: JsonObject): Promise<unknown> {
-    const response = await this.bridge.dispatch(kind, payload);
+    const response = await this.dispatchBridge(kind, payload);
     if (!response.ok) throw new PhotoshopMcpError("HOST_ERROR", response.error?.message ?? `${kind} failed`, response.error);
     return response.data;
   }
@@ -512,7 +531,7 @@ export class PhotoshopFullMcpServer {
 
   private async startUserAssisted(command: CommandDefinition, args: JsonObject, requestId: string): Promise<ToolResult> {
     const job = this.jobs.create(command.id, "queued", { kind: "user_assisted", message: "Waiting for the Photoshop panel" });
-    const response = await this.bridge.dispatch("command.execute", { commandId: command.id, args, jobId: job.id, dialogMode: "display" });
+    const response = await this.dispatchBridge("command.execute", { commandId: command.id, args, jobId: job.id, dialogMode: "display" });
     if (!response.ok) {
       this.jobs.update(job.id, { status: "failed", error: response.error });
       throw new PhotoshopMcpError("HOST_ERROR", response.error?.message ?? `${command.id} failed`, response.error);
@@ -571,7 +590,7 @@ export class PhotoshopFullMcpServer {
       this.jobs.update(job.id, { status: "completed", message: `Automatically approved locally; scope ${scopeDigest}` });
       return result(this.jobs.get(job.id));
     }
-    const response = await this.bridge.dispatch("approval.request", {
+    const response = await this.dispatchBridge("approval.request", {
       jobId: job.id,
       commandId,
       label: command.labels.ko,
@@ -617,7 +636,7 @@ export class PhotoshopFullMcpServer {
     this.policy.consumeApproval("advanced.execute", scope, approvalToken);
     const serialized = JSON.stringify(args.payload);
     if (Buffer.byteLength(serialized) > 1_000_000) throw new PhotoshopMcpError("PRECONDITION_FAILED", "Advanced payload exceeds 1 MB");
-    const response = await this.bridge.dispatch("advanced.batchplay", {
+    const response = await this.dispatchBridge("advanced.batchplay", {
       descriptors: args.payload,
       justification: args.justification,
     });
@@ -671,7 +690,7 @@ export class PhotoshopFullMcpServer {
       this.jobs.update(job.id, { status: "completed", message: `Validation approved automatically; scope ${approvalScopeDigest(scope)}` });
       return result(this.jobs.get(job.id));
     }
-    const response = await this.bridge.dispatch("approval.request", {
+    const response = await this.dispatchBridge("approval.request", {
       jobId: job.id,
       commandId: approvalCommandId,
       label: `검증: ${command.labels.ko}`,
@@ -699,7 +718,7 @@ export class PhotoshopFullMcpServer {
     const approvalCommandId = `validation:${command.id}`;
     const approvalToken = this.approvalToken(approvalCommandId, { args }, input.approval_token);
     this.policy.consumeApproval(approvalCommandId, { args }, approvalToken);
-    const raw = await this.bridge.dispatch("command.execute", {
+    const raw = await this.dispatchBridge("command.execute", {
       commandId: command.id,
       args: this.dispatchArgs(command.id, args),
       dialogMode: "silent",
