@@ -15,6 +15,11 @@ $packagePath = Join-Path $repoRoot 'package.json'
 $package = Get-Content -LiteralPath $packagePath -Raw | ConvertFrom-Json
 $version = [string]$package.version
 if ([string]::IsNullOrWhiteSpace($version)) { throw 'package.json does not contain a version.' }
+$workingTree = @(& git -C $repoRoot status --porcelain --untracked-files=all 2>$null)
+if ($LASTEXITCODE -ne 0) { throw 'Release builds require a Git worktree.' }
+if ($workingTree.Count -ne 0) { throw 'Release builds require a clean Git worktree; commit or remove every tracked and untracked change first.' }
+$commit = (& git -C $repoRoot rev-parse HEAD 2>$null)
+if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace([string]$commit)) { throw 'Could not resolve the release commit.' }
 $publicKeyPath = Join-Path $repoRoot 'scripts\install\release-signing-public.xml'
 if ([string]::IsNullOrWhiteSpace($SigningKeyPath)) {
     if ($env:PS_MCP_RELEASE_SIGNING_PRIVATE_KEY) { $SigningKeyPath = $env:PS_MCP_RELEASE_SIGNING_PRIVATE_KEY }
@@ -72,8 +77,6 @@ Copy-Item -LiteralPath (Join-Path $repoRoot 'README.md') -Destination (Join-Path
 Copy-Item -LiteralPath (Join-Path $repoRoot 'LICENSE') -Destination (Join-Path $bundleRoot 'LICENSE') -Force
 Copy-Item -LiteralPath (Join-Path $repoRoot 'docs') -Destination (Join-Path $bundleRoot 'docs') -Recurse -Force
 
-$commit = (& git -C $repoRoot rev-parse HEAD 2>$null)
-if ($LASTEXITCODE -ne 0) { $commit = '' }
 $manifest = [ordered]@{
     schema = 'photoshop-full-mcp-release/1'
     version = $version
