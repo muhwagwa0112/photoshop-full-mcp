@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "kind": "command",
+  "commandId": "layer.create",
+  "catalogContractSha256": "83fb11fffbeb91896863ac6420a5b758b906df286e1337e05302cfc5bc61ae02",
+  "capturedAt": "2026-08-22T10:12:40.885Z",
+  "host": {
+    "application": "Photoshop",
+    "appVersion": "27.9.1",
+    "locale": "ko_KR",
+    "pluginVersion": "2.0.0",
+    "protocol": "ps-mcp-bridge/2",
+    "connectedAtCapture": true
+  },
+  "fixture": {
+    "isolatedDocument": true,
+    "temporaryDocumentClosed": true,
+    "executionPassed": true,
+    "stateVerified": true,
+    "undoRoundTripVerified": true,
+    "previewVerified": true
+  },
+  "result": "passed",
+  "provenance": {
+    "version": 1,
+    "method": "live-mcp-stdio-v1",
+    "transactionId": "82f60cb8-dd61-4ba4-a7d0-7e4bc1bd763c",
+    "requestId": "0569628a-7cc7-4b78-9c4c-3d3373e4a009",
+    "serverId": "3fa7fcec-db4d-4894-bdce-96a80069334f",
+    "steps": {
+      "hostDescribe": true,
+      "validation": true,
+      "preview": true,
+      "undo": true,
+      "tempDocumentClose": true,
+      "bootstrapRequestId": "3f59b943-c95d-432e-ae9e-21d0a8f931cb",
+      "setupRequestIds": [],
+      "targetRequestId": "0569628a-7cc7-4b78-9c4c-3d3373e4a009",
+      "undoRequestId": "623829f4-583e-4f55-b395-e1d0791c9e06",
+      "closeRequestId": "cd096a7b-c012-4055-9f9b-9ec69882fd82",
+      "beforeStateSha256": "25eed08d24db28a2c59d3c2f3efe3b05bd1fe648b3f6d1f91c93cfc76aa4db95",
+      "afterStateSha256": "5756f8eca9242329bd5ce15481d2ab0ac4a9f28d5fa8acc3cb5be68aca6d13af",
+      "finalStateSha256": "2e2702ffcc626f665ce68db8d0bc984e3fe778f1a5ea3eae93ef0d0220c22a5b",
+      "previewBeforeSha256": "fb0e21316a0de0be5e841feee99611accd2a2b9e6b5857d197eaf48b0f68e8df",
+      "previewAfterSha256": "fb0e21316a0de0be5e841feee99611accd2a2b9e6b5857d197eaf48b0f68e8df",
+      "previewAfterUndoSha256": "fb0e21316a0de0be5e841feee99611accd2a2b9e6b5857d197eaf48b0f68e8df"
+    },
+    "signature": "FCLqAP2FjIf+aVLkHm+icKhbVRuvgx99if7exzzW2i6lC9OtthEo9W4Vy7pr4KCWUKDKvczJO4ToRLofol2uDA=="
+  }
+}

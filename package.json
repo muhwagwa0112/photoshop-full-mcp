@@ -1,0 +1,42 @@
+{
+  "name": "photoshop-full-mcp",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Capability-gated MCP server and UXP bridge for Adobe Photoshop",
+  "type": "module",
+  "main": "dist/src/index.js",
+  "bin": {
+    "photoshop-full-mcp": "dist/src/index.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json && npm run copy:assets",
+    "copy:assets": "node scripts/copy-assets.mjs",
+    "check": "tsc -p tsconfig.json --noEmit && npm run check:catalog && npm run audit:inventory",
+    "check:catalog": "node scripts/catalog-handler-check.mjs",
+    "audit:inventory": "node scripts/inventory-evidence-audit.mjs --strict",
+    "audit:inventory:json": "node scripts/inventory-evidence-audit.mjs --strict --json",
+    "audit:promotion": "node scripts/inventory-evidence-audit.mjs --strict",
+    "evidence:record": "node scripts/evidence-record.mjs",
+    "evidence:feature": "node scripts/feature-evidence-record.mjs",
+    "evidence:core": "node scripts/evidence-core-batch.mjs",
+    "test": "node --import tsx --test --test-concurrency=1 tests/*.test.ts",
+    "test:contract": "node scripts/mcp-contract-smoke.mjs",
+    "test:live:export": "node scripts/live-export-matrix.mjs",
+    "cleanup:owned-documents": "node scripts/cleanup-owned-documents.mjs",
+    "start": "node dist/src/index.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.30.0",
+    "ajv": "8.20.0",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsx": "^4.20.0",
+    "typescript": "7.0.2"
+  },
+  "license": "MIT"
+}

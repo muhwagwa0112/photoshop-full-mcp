@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "kind": "feature",
+  "featureId": "text.typography",
+  "catalogContractSha256": "7c36f46cdd56f6ac4e104944490c0b7c7798a9cf8dfb76ad5759038d048f876d",
+  "capturedAt": "2026-08-22T12:07:04.297Z",
+  "host": {
+    "application": "Photoshop",
+    "appVersion": "27.9.1",
+    "locale": "ko_KR",
+    "pluginVersion": "2.0.0",
+    "protocol": "ps-mcp-bridge/2",
+    "connectedAtCapture": true
+  },
+  "fixture": {
+    "isolatedDocument": true,
+    "temporaryDocumentClosed": true,
+    "executionPassed": true,
+    "stateVerified": true,
+    "undoRoundTripVerified": null,
+    "previewVerified": true
+  },
+  "result": "passed",
+  "provenance": {
+    "version": 1,
+    "method": "live-mcp-stdio-v1",
+    "transactionId": "bee651b2-8dc1-4ff9-a0da-11ad75b2ea2b",
+    "requestId": "03ba417d-c54c-4e83-83d7-fceb246eb0f7",
+    "serverId": "3fa7fcec-db4d-4894-bdce-96a80069334f",
+    "steps": {
+      "hostDescribe": true,
+      "validation": true,
+      "preview": true,
+      "tempDocumentClose": true,
+      "commandRequestIds": [
+        "03ba417d-c54c-4e83-83d7-fceb246eb0f7",
+        "5f944382-99a4-4569-bc3f-e22eb73971c8",
+        "7a9517bc-d6b0-43a0-8288-be84abb5c41c",
+        "01dd0bbf-29c2-42d4-a730-8e8bf274267d",
+        "a35f453e-6558-4b78-a70b-c27a903bc482",
+        "b467b5ec-15a2-4eb8-b2d3-0b1873821d8a"
+      ],
+      "closeRequestId": "9e64d2ca-c478-4f1e-8f6f-6313d1d385db",
+      "beforeStateSha256": "2e2702ffcc626f665ce68db8d0bc984e3fe778f1a5ea3eae93ef0d0220c22a5b",
+      "afterStateSha256": "8279e73ce290b1f06c480beb4784ebd254459aa802065e7fead87ac234b772cb",
+      "finalStateSha256": "2e2702ffcc626f665ce68db8d0bc984e3fe778f1a5ea3eae93ef0d0220c22a5b",
+      "previewBeforeSha256": "a1804089a60b904f8a635d5601d85541ed44a4d23d8effb928a6b983fe62bccf",
+      "previewAfterSha256": "38264d7a6c4cf488466d6136edc12ade933c9cec8a7c9b69e87aba0060cf2d42",
+      "exportChecks": []
+    },
+    "signature": "5jcDMQ3cWFwDRmlu6L308uKJhn4b+kDtV+pZJ6YYtZsHiamTLac7lMkhCWL8PpgJhj//LXj0SWXRFJ0y0Rk2Dw=="
+  }
+}

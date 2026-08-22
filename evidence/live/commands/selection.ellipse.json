@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "kind": "command",
+  "commandId": "selection.ellipse",
+  "catalogContractSha256": "e7b794717c51fa4bdbd70e7c6d0197536aef51c3cde997e6f9b72825963b068d",
+  "capturedAt": "2026-08-22T10:26:17.713Z",
+  "host": {
+    "application": "Photoshop",
+    "appVersion": "27.9.1",
+    "locale": "ko_KR",
+    "pluginVersion": "2.0.0",
+    "protocol": "ps-mcp-bridge/2",
+    "connectedAtCapture": true
+  },
+  "fixture": {
+    "isolatedDocument": true,
+    "temporaryDocumentClosed": true,
+    "executionPassed": true,
+    "stateVerified": true,
+    "undoRoundTripVerified": true,
+    "previewVerified": true
+  },
+  "result": "passed",
+  "provenance": {
+    "version": 1,
+    "method": "live-mcp-stdio-v1",
+    "transactionId": "ab5fb8ec-b4c6-473f-9c55-f6acd7350d06",
+    "requestId": "7b249a84-dcba-4ca2-88c7-22cde00d6ff5",
+    "serverId": "3fa7fcec-db4d-4894-bdce-96a80069334f",
+    "steps": {
+      "hostDescribe": true,
+      "validation": true,
+      "preview": true,
+      "undo": true,
+      "tempDocumentClose": true,
+      "bootstrapRequestId": "71b50889-bec4-4208-b758-9e0f52a1662c",
+      "setupRequestIds": [],
+      "targetRequestId": "7b249a84-dcba-4ca2-88c7-22cde00d6ff5",
+      "undoRequestId": "056be739-db72-48be-a0fa-9adbbf73aea4",
+      "closeRequestId": "1c6577b5-ecb2-4f45-b4e1-644e99bc8364",
+      "beforeStateSha256": "81fe360805762573fdc569e8744c4fbd357121d32aab495c24e76289d4855eca",
+      "afterStateSha256": "f2d19d24f0564cf94c55b0b2b0a574aa6e9c500d9fa15a78efeff73c83e304c3",
+      "finalStateSha256": "2e2702ffcc626f665ce68db8d0bc984e3fe778f1a5ea3eae93ef0d0220c22a5b",
+      "previewBeforeSha256": "fb0e21316a0de0be5e841feee99611accd2a2b9e6b5857d197eaf48b0f68e8df",
+      "previewAfterSha256": "fb0e21316a0de0be5e841feee99611accd2a2b9e6b5857d197eaf48b0f68e8df",
+      "previewAfterUndoSha256": "fb0e21316a0de0be5e841feee99611accd2a2b9e6b5857d197eaf48b0f68e8df"
+    },
+    "signature": "nLDEMCdVIRsRJCZY7Np/RnnQGewH52vlwidhYLVLC0QleqbbpASO+ytjGIYN5pf5Fo9N3g/Zdh6JzI8dWiZtBA=="
+  }
+}

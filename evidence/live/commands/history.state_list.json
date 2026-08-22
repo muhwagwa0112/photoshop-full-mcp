@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "kind": "command",
+  "commandId": "history.state_list",
+  "catalogContractSha256": "0f26c0061b4e8dda2a4b51e19917f2e4db0bef72eb3775ec638572b12dcf53d2",
+  "capturedAt": "2026-08-22T12:20:14.349Z",
+  "host": {
+    "application": "Photoshop",
+    "appVersion": "27.9.1",
+    "locale": "ko_KR",
+    "pluginVersion": "2.0.0",
+    "protocol": "ps-mcp-bridge/2",
+    "connectedAtCapture": true
+  },
+  "fixture": {
+    "isolatedDocument": true,
+    "temporaryDocumentClosed": true,
+    "executionPassed": true,
+    "stateVerified": true,
+    "undoRoundTripVerified": null,
+    "previewVerified": true
+  },
+  "result": "passed",
+  "provenance": {
+    "version": 1,
+    "method": "live-mcp-stdio-v1",
+    "transactionId": "2409ce4f-ef2d-49c9-93c6-40a4b00dd5be",
+    "requestId": "f30d5888-8443-47ae-ba31-02f8a20e6c6a",
+    "serverId": "3fa7fcec-db4d-4894-bdce-96a80069334f",
+    "steps": {
+      "hostDescribe": true,
+      "validation": true,
+      "preview": true,
+      "undo": null,
+      "tempDocumentClose": true,
+      "bootstrapRequestId": "d1557f86-6cdc-43ff-8fa1-6fee977b3d9e",
+      "setupRequestIds": [
+        "708e9b66-29b5-469d-8137-379871ab5acc"
+      ],
+      "targetRequestId": "f30d5888-8443-47ae-ba31-02f8a20e6c6a",
+      "undoRequestId": null,
+      "closeRequestId": "96fd3b77-dcc0-4578-9ddb-02c75149abc8",
+      "closeRequestIds": [
+        "96fd3b77-dcc0-4578-9ddb-02c75149abc8"
+      ],
+      "beforeStateSha256": "a6b5e2d9c8ffd2778eb882b3a6b8a3a7512deadb2e99740b9baac5cfccbb1ca2",
+      "afterStateSha256": "a6b5e2d9c8ffd2778eb882b3a6b8a3a7512deadb2e99740b9baac5cfccbb1ca2",
+      "finalStateSha256": "2e2702ffcc626f665ce68db8d0bc984e3fe778f1a5ea3eae93ef0d0220c22a5b",
+      "previewBeforeSha256": "fb0e21316a0de0be5e841feee99611accd2a2b9e6b5857d197eaf48b0f68e8df",
+      "previewAfterSha256": "fb0e21316a0de0be5e841feee99611accd2a2b9e6b5857d197eaf48b0f68e8df",
+      "previewAfterUndoSha256": null
+    },
+    "signature": "Z+Mu6rzQCNigQU46+1TgVdkkBhKUu5RltEyHt3p94kfbb6rv0kkipqEztpDlnZRSS5h4ETQ9g7X72UI7joctDA=="
+  }
+}

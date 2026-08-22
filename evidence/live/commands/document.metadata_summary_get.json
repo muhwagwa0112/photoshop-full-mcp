@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "kind": "command",
+  "commandId": "document.metadata_summary_get",
+  "catalogContractSha256": "e92a9c898683d710c3b3f3bc76af26a6db1dc1ae2c14e4b1675712d9978064f4",
+  "capturedAt": "2026-08-22T11:49:05.784Z",
+  "host": {
+    "application": "Photoshop",
+    "appVersion": "27.9.1",
+    "locale": "ko_KR",
+    "pluginVersion": "2.0.0",
+    "protocol": "ps-mcp-bridge/2",
+    "connectedAtCapture": true
+  },
+  "fixture": {
+    "isolatedDocument": true,
+    "temporaryDocumentClosed": true,
+    "executionPassed": true,
+    "stateVerified": true,
+    "undoRoundTripVerified": null,
+    "previewVerified": true
+  },
+  "result": "passed",
+  "provenance": {
+    "version": 1,
+    "method": "live-mcp-stdio-v1",
+    "transactionId": "3d2a5c7b-baf6-4539-aec7-23bf8812820c",
+    "requestId": "a9af38b8-10c0-42ef-817d-c822909e6c17",
+    "serverId": "3fa7fcec-db4d-4894-bdce-96a80069334f",
+    "steps": {
+      "hostDescribe": true,
+      "validation": true,
+      "preview": true,
+      "undo": null,
+      "tempDocumentClose": true,
+      "bootstrapRequestId": "fec23753-cd16-426b-ac6f-3fe5d8b0a3e7",
+      "setupRequestIds": [],
+      "targetRequestId": "a9af38b8-10c0-42ef-817d-c822909e6c17",
+      "undoRequestId": null,
+      "closeRequestId": "8607b9ec-bf99-45c1-b841-389977213642",
+      "closeRequestIds": [
+        "8607b9ec-bf99-45c1-b841-389977213642"
+      ],
+      "beforeStateSha256": "936982d336ce63e85c2ab48b1a46b4bd594b93198870a124d23256b992889a9b",
+      "afterStateSha256": "936982d336ce63e85c2ab48b1a46b4bd594b93198870a124d23256b992889a9b",
+      "finalStateSha256": "2e2702ffcc626f665ce68db8d0bc984e3fe778f1a5ea3eae93ef0d0220c22a5b",
+      "previewBeforeSha256": "fb0e21316a0de0be5e841feee99611accd2a2b9e6b5857d197eaf48b0f68e8df",
+      "previewAfterSha256": "fb0e21316a0de0be5e841feee99611accd2a2b9e6b5857d197eaf48b0f68e8df",
+      "previewAfterUndoSha256": null
+    },
+    "signature": "1e6jImuWpZKtwXmh5nhh6+DFnKNQJWkVzY5l0B73I+7v1U9tQHzN/LTO59FCuYEarr7jbe7JtK1/v6TTx+oQAw=="
+  }
+}

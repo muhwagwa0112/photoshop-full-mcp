@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "kind": "command",
+  "commandId": "selection.contract",
+  "catalogContractSha256": "955d1efe9f74ad6889720ac7104d67d5c96bec604412d5ae458ad436cc4abbce",
+  "capturedAt": "2026-08-22T10:26:44.208Z",
+  "host": {
+    "application": "Photoshop",
+    "appVersion": "27.9.1",
+    "locale": "ko_KR",
+    "pluginVersion": "2.0.0",
+    "protocol": "ps-mcp-bridge/2",
+    "connectedAtCapture": true
+  },
+  "fixture": {
+    "isolatedDocument": true,
+    "temporaryDocumentClosed": true,
+    "executionPassed": true,
+    "stateVerified": true,
+    "undoRoundTripVerified": true,
+    "previewVerified": true
+  },
+  "result": "passed",
+  "provenance": {
+    "version": 1,
+    "method": "live-mcp-stdio-v1",
+    "transactionId": "ace252d8-8842-4dbc-ac76-de0d09c5a7fe",
+    "requestId": "8d9748c0-a2d0-488f-9e85-2416cb315881",
+    "serverId": "3fa7fcec-db4d-4894-bdce-96a80069334f",
+    "steps": {
+      "hostDescribe": true,
+      "validation": true,
+      "preview": true,
+      "undo": true,
+      "tempDocumentClose": true,
+      "bootstrapRequestId": "0ff77de9-ad46-4567-bca3-7d5301653a5f",
+      "setupRequestIds": [
+        "66018136-39f2-4795-bebd-e123f0068407"
+      ],
+      "targetRequestId": "8d9748c0-a2d0-488f-9e85-2416cb315881",
+      "undoRequestId": "c1e10cd1-7525-4fc0-ae1b-fda4936d6c21",
+      "closeRequestId": "6f600469-19f2-4f48-84ea-f19b00cf071b",
+      "beforeStateSha256": "871066fbbcc022e83fe032cbdb48d898a730522d8f0b15c96f17bdb7a4f826aa",
+      "afterStateSha256": "1c76f848f682b40de7602a89a88d95db07fa94a95071ca5340b4219212717e44",
+      "finalStateSha256": "2e2702ffcc626f665ce68db8d0bc984e3fe778f1a5ea3eae93ef0d0220c22a5b",
+      "previewBeforeSha256": "fb0e21316a0de0be5e841feee99611accd2a2b9e6b5857d197eaf48b0f68e8df",
+      "previewAfterSha256": "fb0e21316a0de0be5e841feee99611accd2a2b9e6b5857d197eaf48b0f68e8df",
+      "previewAfterUndoSha256": "fb0e21316a0de0be5e841feee99611accd2a2b9e6b5857d197eaf48b0f68e8df"
+    },
+    "signature": "EAy7HuN8X76N4Iwbj1xGFtcS+t8M4R4N8NgAkC5xZUO2G8ry67/l89uJngSNv9f6HNa1sDMzz3KYhO9DA8tdAA=="
+  }
+}

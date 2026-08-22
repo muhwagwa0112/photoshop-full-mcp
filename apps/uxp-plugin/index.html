@@ -1,0 +1,56 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Photoshop Full MCP</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="main.js"></script>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Photoshop Full MCP</h1>
+        <span id="connectionBadge" class="badge offline">오프라인</span>
+      </header>
+
+      <section class="card">
+        <h2>브리지 연결</h2>
+        <p id="connectionDetail" class="muted">로컬 브리지를 검색 중입니다.</p>
+        <label for="pairCode">페어링 코드</label>
+        <div class="row">
+          <sp-textfield id="pairCode" placeholder="6자리 코드"></sp-textfield>
+          <button id="pairButton" class="primary" type="button">페어링</button>
+        </div>
+        <div class="row wrap">
+          <button id="reconnectButton" class="primary" type="button">다시 연결</button>
+          <button id="unpairButton" class="danger" type="button">연결 해제</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>파일 접근</h2>
+        <p id="exportFolderDetail" class="muted">내보내기 폴더가 선택되지 않았습니다.</p>
+        <button id="chooseExportFolderButton" class="primary" type="button">내보내기 폴더 선택</button>
+      </section>
+
+      <section id="pendingApprovalCard" class="card hidden">
+        <h2 id="pendingApprovalTitle">승인 대기</h2>
+        <p id="pendingApprovalLabel" class="approval-label"></p>
+        <p id="pendingApprovalRisk" class="muted"></p>
+        <p id="pendingApprovalConsequence" class="approval-consequence hidden"></p>
+        <p id="pendingApprovalDigest" class="scope-digest hidden"></p>
+        <p id="pendingApprovalInstruction" class="manual-instruction"></p>
+        <div class="row">
+          <button id="approveJobButton" class="primary" type="button">승인</button>
+          <button id="rejectJobButton" class="danger" type="button">거부</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>활동</h2>
+        <div id="activity" class="activity" aria-live="polite">대기 중</div>
+      </section>
+    </main>
+  </body>
+</html>

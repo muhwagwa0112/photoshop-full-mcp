@@ -1,0 +1,1 @@
+{"ok":true,"connected":true,"hostVersion":"27.9.1","approvalMode":"auto","previewReceived":true,"undoVerified":true,"exportPath":"%LOCALAPPDATA%\\PS_MCP\\exports\\PS_MCP_FRESH_ACCEPTANCE.png","exportBytes":2098,"unsupportedRecoveryCode":"UNSUPPORTED","initialDocumentCount":0,"finalDocumentCount":0,"closed":true,"error":null}

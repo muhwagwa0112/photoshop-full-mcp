@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "kind": "command",
+  "commandId": "image.resize",
+  "catalogContractSha256": "de767872a36a41d31049b6939a42431a8974876d6d72b09362a29e658768ae51",
+  "capturedAt": "2026-08-22T10:18:00.089Z",
+  "host": {
+    "application": "Photoshop",
+    "appVersion": "27.9.1",
+    "locale": "ko_KR",
+    "pluginVersion": "2.0.0",
+    "protocol": "ps-mcp-bridge/2",
+    "connectedAtCapture": true
+  },
+  "fixture": {
+    "isolatedDocument": true,
+    "temporaryDocumentClosed": true,
+    "executionPassed": true,
+    "stateVerified": true,
+    "undoRoundTripVerified": true,
+    "previewVerified": true
+  },
+  "result": "passed",
+  "provenance": {
+    "version": 1,
+    "method": "live-mcp-stdio-v1",
+    "transactionId": "4b8c1de5-89f3-49eb-9c7d-5c183bbd3c07",
+    "requestId": "24d15192-8936-4384-b8e1-10e6f701cffe",
+    "serverId": "3fa7fcec-db4d-4894-bdce-96a80069334f",
+    "steps": {
+      "hostDescribe": true,
+      "validation": true,
+      "preview": true,
+      "undo": true,
+      "tempDocumentClose": true,
+      "bootstrapRequestId": "cd204d54-67e6-45f2-a344-6b279ec2ce8c",
+      "setupRequestIds": [],
+      "targetRequestId": "24d15192-8936-4384-b8e1-10e6f701cffe",
+      "undoRequestId": "da61f01a-af6f-4540-af83-cee6473d7a4c",
+      "closeRequestId": "41607594-aacb-4e4a-b0e3-7031cdc01853",
+      "beforeStateSha256": "1ce5e90ef3d605f980dc93ed38128548a0066bd6ba86b9c1acdc82082b776ed9",
+      "afterStateSha256": "1028ab098d0cf4345d0f253821b8bb3945b400ee573b0308b2aa78d3226fcd9b",
+      "finalStateSha256": "2e2702ffcc626f665ce68db8d0bc984e3fe778f1a5ea3eae93ef0d0220c22a5b",
+      "previewBeforeSha256": "fb0e21316a0de0be5e841feee99611accd2a2b9e6b5857d197eaf48b0f68e8df",
+      "previewAfterSha256": "cef0c1cd616f159836a5174a04e150a0178275a368c8c8260d990fa87ec4dc00",
+      "previewAfterUndoSha256": "fb0e21316a0de0be5e841feee99611accd2a2b9e6b5857d197eaf48b0f68e8df"
+    },
+    "signature": "5aHtQ+5Gvc9e1CaAvUPCJM9QYuJkadWPrErv1q1N5Zacr6Zp716YPBbwq3GnWGHATgPW+WHkxwrS/OEAihSgDg=="
+  }
+}

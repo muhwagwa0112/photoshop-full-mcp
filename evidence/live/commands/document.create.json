@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "kind": "command",
+  "commandId": "document.create",
+  "catalogContractSha256": "8f77243dce79776bae5ea3ce5dfdc76d47dbbdd408befe95d19f1356769adefb",
+  "capturedAt": "2026-08-22T09:50:36.702Z",
+  "host": {
+    "application": "Photoshop",
+    "appVersion": "27.9.1",
+    "locale": "ko_KR",
+    "pluginVersion": "2.0.0",
+    "protocol": "ps-mcp-bridge/2",
+    "connectedAtCapture": true
+  },
+  "fixture": {
+    "isolatedDocument": true,
+    "temporaryDocumentClosed": true,
+    "executionPassed": true,
+    "stateVerified": true,
+    "undoRoundTripVerified": null,
+    "previewVerified": true
+  },
+  "result": "passed",
+  "provenance": {
+    "version": 1,
+    "method": "live-mcp-stdio-v1",
+    "transactionId": "174caafb-f79b-483f-8370-4beebe63dd55",
+    "requestId": "f26d727a-3cc1-492a-99df-fa275dfca53b",
+    "serverId": "3fa7fcec-db4d-4894-bdce-96a80069334f",
+    "steps": {
+      "hostDescribe": true,
+      "validation": true,
+      "preview": true,
+      "undo": null,
+      "tempDocumentClose": true,
+      "targetRequestId": "f26d727a-3cc1-492a-99df-fa275dfca53b",
+      "undoRequestId": null,
+      "closeRequestId": "4b83eced-4dc7-499b-9585-afd630e2a1b1",
+      "beforeStateSha256": "2e2702ffcc626f665ce68db8d0bc984e3fe778f1a5ea3eae93ef0d0220c22a5b",
+      "afterStateSha256": "63400b5524c16e891fcf836b713ce7012a15e3daccfa9a5fdf8938b087f59cb1",
+      "finalStateSha256": "2e2702ffcc626f665ce68db8d0bc984e3fe778f1a5ea3eae93ef0d0220c22a5b",
+      "previewBeforeSha256": null,
+      "previewAfterSha256": "fb0e21316a0de0be5e841feee99611accd2a2b9e6b5857d197eaf48b0f68e8df",
+      "previewAfterUndoSha256": null
+    },
+    "signature": "3c5/PK6mZ3NjcyUfRNX2xSJvnsr8n23bastP1H/4EZT0Bu1SukqK5Sh8+mrMaWHfxd3VbiFuHcZcLwf/KICXCg=="
+  }
+}

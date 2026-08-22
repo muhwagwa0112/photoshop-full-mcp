@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "kind": "command",
+  "commandId": "document.rotate",
+  "catalogContractSha256": "5230cfc44184deb4a6d85c7ca086a9116253d088d038ff8fca2df7290955d244",
+  "capturedAt": "2026-08-22T10:31:18.533Z",
+  "host": {
+    "application": "Photoshop",
+    "appVersion": "27.9.1",
+    "locale": "ko_KR",
+    "pluginVersion": "2.0.0",
+    "protocol": "ps-mcp-bridge/2",
+    "connectedAtCapture": true
+  },
+  "fixture": {
+    "isolatedDocument": true,
+    "temporaryDocumentClosed": true,
+    "executionPassed": true,
+    "stateVerified": true,
+    "undoRoundTripVerified": true,
+    "previewVerified": true
+  },
+  "result": "passed",
+  "provenance": {
+    "version": 1,
+    "method": "live-mcp-stdio-v1",
+    "transactionId": "221186d1-3138-4bdd-8dbe-85dd44ce09b6",
+    "requestId": "9664eb49-b3bb-42eb-ab88-30da8f6b5af6",
+    "serverId": "3fa7fcec-db4d-4894-bdce-96a80069334f",
+    "steps": {
+      "hostDescribe": true,
+      "validation": true,
+      "preview": true,
+      "undo": true,
+      "tempDocumentClose": true,
+      "bootstrapRequestId": "155b4bf0-0593-41da-89c5-34e9ea4a093f",
+      "setupRequestIds": [],
+      "targetRequestId": "9664eb49-b3bb-42eb-ab88-30da8f6b5af6",
+      "undoRequestId": "250ce444-1b77-454e-9aef-1ff58d35b477",
+      "closeRequestId": "38346c2f-3f5c-43c0-8adc-b20e313ef596",
+      "beforeStateSha256": "7bb0d197970be433a23f53b48d0094b0c4c8f3fa95d98a38f06e1fa29ffc56a0",
+      "afterStateSha256": "bc4c4577669f9630c62979bd845a88192d8e8f905a5e7fd1e928ceafaf503265",
+      "finalStateSha256": "2e2702ffcc626f665ce68db8d0bc984e3fe778f1a5ea3eae93ef0d0220c22a5b",
+      "previewBeforeSha256": "fb0e21316a0de0be5e841feee99611accd2a2b9e6b5857d197eaf48b0f68e8df",
+      "previewAfterSha256": "f71923241099fcb9eade747166f6a33cdece939b8ff6a59ed3a176a9986eafcf",
+      "previewAfterUndoSha256": "fb0e21316a0de0be5e841feee99611accd2a2b9e6b5857d197eaf48b0f68e8df"
+    },
+    "signature": "oE8hiXWtAuaPu/nwxJp1bDbYr+Cr/eMm5BKz5EE3RrC1ul6/ksGt3n0fR3T54A4/OQ2khZWWY45ib+MsK73NBA=="
+  }
+}

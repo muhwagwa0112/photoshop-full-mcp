@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "kind": "command",
+  "commandId": "selection.rectangle",
+  "catalogContractSha256": "6a7339cbf08de935c6b3a01313a4c02bd896c58bd32e1c9eda98ea385a6796bb",
+  "capturedAt": "2026-08-22T10:14:46.102Z",
+  "host": {
+    "application": "Photoshop",
+    "appVersion": "27.9.1",
+    "locale": "ko_KR",
+    "pluginVersion": "2.0.0",
+    "protocol": "ps-mcp-bridge/2",
+    "connectedAtCapture": true
+  },
+  "fixture": {
+    "isolatedDocument": true,
+    "temporaryDocumentClosed": true,
+    "executionPassed": true,
+    "stateVerified": true,
+    "undoRoundTripVerified": true,
+    "previewVerified": true
+  },
+  "result": "passed",
+  "provenance": {
+    "version": 1,
+    "method": "live-mcp-stdio-v1",
+    "transactionId": "3a196b8c-97e3-49e3-a5e9-63576103fe02",
+    "requestId": "05fc693e-c47c-4376-95e7-a2f7d0f3e3c1",
+    "serverId": "3fa7fcec-db4d-4894-bdce-96a80069334f",
+    "steps": {
+      "hostDescribe": true,
+      "validation": true,
+      "preview": true,
+      "undo": true,
+      "tempDocumentClose": true,
+      "bootstrapRequestId": "135a3713-d0bc-42f4-8b5d-5cfe8ac629df",
+      "setupRequestIds": [],
+      "targetRequestId": "05fc693e-c47c-4376-95e7-a2f7d0f3e3c1",
+      "undoRequestId": "bfe3670c-9c83-4e95-aa7f-355cae0f40bd",
+      "closeRequestId": "83125987-86d8-4f30-9449-3dc8241af3bd",
+      "beforeStateSha256": "8650d261b3e868d37f349c89358b91eef4856c37fcff9909e437fb7c771478ef",
+      "afterStateSha256": "1a0199e9b615e0db37c757bec8674f7871f929ee5af03cf44a7e1640b89db737",
+      "finalStateSha256": "2e2702ffcc626f665ce68db8d0bc984e3fe778f1a5ea3eae93ef0d0220c22a5b",
+      "previewBeforeSha256": "fb0e21316a0de0be5e841feee99611accd2a2b9e6b5857d197eaf48b0f68e8df",
+      "previewAfterSha256": "fb0e21316a0de0be5e841feee99611accd2a2b9e6b5857d197eaf48b0f68e8df",
+      "previewAfterUndoSha256": "fb0e21316a0de0be5e841feee99611accd2a2b9e6b5857d197eaf48b0f68e8df"
+    },
+    "signature": "/yTPxJoPhqio72Y4YbPAACgRd4WQiC9W/Vt8l1JjYDHT5nGbi+q8N85972d8SzYSXIGPpsNIWAxvdMVtMiUSAQ=="
+  }
+}

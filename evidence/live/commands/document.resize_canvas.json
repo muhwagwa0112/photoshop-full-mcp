@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "kind": "command",
+  "commandId": "document.resize_canvas",
+  "catalogContractSha256": "d1a84ac85d4411339a13656e7e8efe5716821e00c95f49e255c14f726e4469b2",
+  "capturedAt": "2026-08-22T10:24:03.781Z",
+  "host": {
+    "application": "Photoshop",
+    "appVersion": "27.9.1",
+    "locale": "ko_KR",
+    "pluginVersion": "2.0.0",
+    "protocol": "ps-mcp-bridge/2",
+    "connectedAtCapture": true
+  },
+  "fixture": {
+    "isolatedDocument": true,
+    "temporaryDocumentClosed": true,
+    "executionPassed": true,
+    "stateVerified": true,
+    "undoRoundTripVerified": true,
+    "previewVerified": true
+  },
+  "result": "passed",
+  "provenance": {
+    "version": 1,
+    "method": "live-mcp-stdio-v1",
+    "transactionId": "59578bcf-1bcb-4285-841b-3123e0724bf8",
+    "requestId": "de90aa45-800e-4b0e-8eaf-73ac43d16022",
+    "serverId": "3fa7fcec-db4d-4894-bdce-96a80069334f",
+    "steps": {
+      "hostDescribe": true,
+      "validation": true,
+      "preview": true,
+      "undo": true,
+      "tempDocumentClose": true,
+      "bootstrapRequestId": "95f98404-2908-47a0-8990-91714c8f0ceb",
+      "setupRequestIds": [],
+      "targetRequestId": "de90aa45-800e-4b0e-8eaf-73ac43d16022",
+      "undoRequestId": "e53cda98-910f-4695-96ed-401a9c135b96",
+      "closeRequestId": "38933e38-2376-43f8-9956-cbcad9355c1b",
+      "beforeStateSha256": "42cc14dc540faeb1f593d7f32f1539bb9a41b644f0315c5efdc6b638cf8c36f5",
+      "afterStateSha256": "7df6b074ac897a61847ef40c516b505cace90c9ba7720ab80fd7b55f4150fb8b",
+      "finalStateSha256": "2e2702ffcc626f665ce68db8d0bc984e3fe778f1a5ea3eae93ef0d0220c22a5b",
+      "previewBeforeSha256": "fb0e21316a0de0be5e841feee99611accd2a2b9e6b5857d197eaf48b0f68e8df",
+      "previewAfterSha256": "1f985ab1e15502a56f3e99aa4fd97726ea8bd4b52d73a5b6eb0808ebfa28ff1c",
+      "previewAfterUndoSha256": "fb0e21316a0de0be5e841feee99611accd2a2b9e6b5857d197eaf48b0f68e8df"
+    },
+    "signature": "z/h3tmL0ah+eZ/XvmCW4YsB4T3KPbJXhzrIAjQMPHEzZs0ZcKgQb1DDg6YSOQQIOtBA7d8p1kJRf369tmltSCA=="
+  }
+}

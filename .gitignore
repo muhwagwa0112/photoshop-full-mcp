@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.cache/
+coverage/
+*.log
+*.tmp
+.env
+apps/uxp-plugin/dist/
+.codex-validation-*.json
+.tmp-*
+host-describe.json
+validation-args.json

@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "kind": "command",
+  "commandId": "selection.polygon",
+  "catalogContractSha256": "d1ca5250fe93ad7ba1c33bbedf86ad4dbcbd4e2ecb3f447ae3f3aa9649fe7579",
+  "capturedAt": "2026-08-22T10:27:22.717Z",
+  "host": {
+    "application": "Photoshop",
+    "appVersion": "27.9.1",
+    "locale": "ko_KR",
+    "pluginVersion": "2.0.0",
+    "protocol": "ps-mcp-bridge/2",
+    "connectedAtCapture": true
+  },
+  "fixture": {
+    "isolatedDocument": true,
+    "temporaryDocumentClosed": true,
+    "executionPassed": true,
+    "stateVerified": true,
+    "undoRoundTripVerified": true,
+    "previewVerified": true
+  },
+  "result": "passed",
+  "provenance": {
+    "version": 1,
+    "method": "live-mcp-stdio-v1",
+    "transactionId": "4ec0f78e-8bf0-4bf5-9c93-e12c4b509094",
+    "requestId": "48cbf87e-b0d5-4a02-b14a-1268dd311420",
+    "serverId": "3fa7fcec-db4d-4894-bdce-96a80069334f",
+    "steps": {
+      "hostDescribe": true,
+      "validation": true,
+      "preview": true,
+      "undo": true,
+      "tempDocumentClose": true,
+      "bootstrapRequestId": "b9ff39da-1d40-4191-8894-d74f8437830f",
+      "setupRequestIds": [],
+      "targetRequestId": "48cbf87e-b0d5-4a02-b14a-1268dd311420",
+      "undoRequestId": "adb23821-10a1-4f63-ae73-abcac3e82de6",
+      "closeRequestId": "93a68e66-119e-4b48-abb6-7679794f1897",
+      "beforeStateSha256": "998b9aa4762b2b14d565df33178041e269c20547c8df57a1d1c8288ad3e9e639",
+      "afterStateSha256": "8f92a3be91f909d9f58e62aa8201ecdb4e680df57507ebf47bad1fd3d3d7662f",
+      "finalStateSha256": "2e2702ffcc626f665ce68db8d0bc984e3fe778f1a5ea3eae93ef0d0220c22a5b",
+      "previewBeforeSha256": "fb0e21316a0de0be5e841feee99611accd2a2b9e6b5857d197eaf48b0f68e8df",
+      "previewAfterSha256": "fb0e21316a0de0be5e841feee99611accd2a2b9e6b5857d197eaf48b0f68e8df",
+      "previewAfterUndoSha256": "fb0e21316a0de0be5e841feee99611accd2a2b9e6b5857d197eaf48b0f68e8df"
+    },
+    "signature": "ZW/lOxagU2JtmFfzEcYGgFsQJR6R1Ah0JR1g/ABvCtBf8/91fPYLxcol24u0aLKrEWBL6XFG8oZOnhYL4hJgCA=="
+  }
+}

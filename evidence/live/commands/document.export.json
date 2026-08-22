@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "kind": "command",
+  "commandId": "document.export",
+  "catalogContractSha256": "69be7dec5cec688baab64c40f9eecaa517073dd534929e8762c2a3b409655c23",
+  "capturedAt": "2026-08-22T11:29:05.985Z",
+  "host": {
+    "application": "Photoshop",
+    "appVersion": "27.9.1",
+    "locale": "ko_KR",
+    "pluginVersion": "2.0.0",
+    "protocol": "ps-mcp-bridge/2",
+    "connectedAtCapture": true
+  },
+  "fixture": {
+    "isolatedDocument": true,
+    "temporaryDocumentClosed": true,
+    "executionPassed": true,
+    "stateVerified": true,
+    "undoRoundTripVerified": null,
+    "previewVerified": true
+  },
+  "result": "passed",
+  "provenance": {
+    "version": 1,
+    "method": "live-mcp-stdio-v1",
+    "transactionId": "8db614b1-24ce-40da-aec2-81cf965ef4b9",
+    "requestId": "b19001d2-b1e7-46ee-a90a-14da2c47a7af",
+    "serverId": "3fa7fcec-db4d-4894-bdce-96a80069334f",
+    "steps": {
+      "hostDescribe": true,
+      "validation": true,
+      "preview": true,
+      "undo": null,
+      "tempDocumentClose": true,
+      "bootstrapRequestId": "79fbeaa0-f083-4ea3-9cc3-780af823a78e",
+      "setupRequestIds": [],
+      "targetRequestId": "b19001d2-b1e7-46ee-a90a-14da2c47a7af",
+      "undoRequestId": null,
+      "closeRequestId": "9ff9a5b6-4769-4578-93cc-aa5aef2b7c50",
+      "closeRequestIds": [
+        "9ff9a5b6-4769-4578-93cc-aa5aef2b7c50"
+      ],
+      "beforeStateSha256": "0d956326b701c46c3a397e0e700d953fa67916562b7eb36a8ea2efd3f7e61687",
+      "afterStateSha256": "0d956326b701c46c3a397e0e700d953fa67916562b7eb36a8ea2efd3f7e61687",
+      "finalStateSha256": "2e2702ffcc626f665ce68db8d0bc984e3fe778f1a5ea3eae93ef0d0220c22a5b",
+      "previewBeforeSha256": "fb0e21316a0de0be5e841feee99611accd2a2b9e6b5857d197eaf48b0f68e8df",
+      "previewAfterSha256": "fb0e21316a0de0be5e841feee99611accd2a2b9e6b5857d197eaf48b0f68e8df",
+      "previewAfterUndoSha256": null
+    },
+    "signature": "Q4o7OxH75sw9veMw+Nf1iqWRjs+XAnxKwD9zD8+DIavxiaKOTORr1B+eAvlg7ldaM5qm5Aclfaejv0kh8F29Dg=="
+  }
+}

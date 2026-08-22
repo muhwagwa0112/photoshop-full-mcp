@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "kind": "command",
+  "commandId": "document.color_mode_set",
+  "catalogContractSha256": "f589d41e562b096b41d6fe195332df4bc814c49f48dd8186da441bf54050e62f",
+  "capturedAt": "2026-08-22T11:48:52.014Z",
+  "host": {
+    "application": "Photoshop",
+    "appVersion": "27.9.1",
+    "locale": "ko_KR",
+    "pluginVersion": "2.0.0",
+    "protocol": "ps-mcp-bridge/2",
+    "connectedAtCapture": true
+  },
+  "fixture": {
+    "isolatedDocument": true,
+    "temporaryDocumentClosed": true,
+    "executionPassed": true,
+    "stateVerified": true,
+    "undoRoundTripVerified": true,
+    "previewVerified": true
+  },
+  "result": "passed",
+  "provenance": {
+    "version": 1,
+    "method": "live-mcp-stdio-v1",
+    "transactionId": "4f205710-e3ef-4419-aacc-68c114edc110",
+    "requestId": "8c93c28a-7a35-4ef5-9111-12d7a91da0ac",
+    "serverId": "3fa7fcec-db4d-4894-bdce-96a80069334f",
+    "steps": {
+      "hostDescribe": true,
+      "validation": true,
+      "preview": true,
+      "undo": true,
+      "tempDocumentClose": true,
+      "bootstrapRequestId": "e1163f6d-b80d-4e48-9098-174109c3a359",
+      "setupRequestIds": [],
+      "targetRequestId": "8c93c28a-7a35-4ef5-9111-12d7a91da0ac",
+      "undoRequestId": "4aad4b9c-6d5a-4613-aec0-3d85746424ef",
+      "closeRequestId": "3583fca5-3b0c-4e51-a756-92f0042a67d2",
+      "closeRequestIds": [
+        "3583fca5-3b0c-4e51-a756-92f0042a67d2"
+      ],
+      "beforeStateSha256": "8efbe42f281b71a95e47907886fe6e587ad62ebb1e8a6f0337a35ad1c821c353",
+      "afterStateSha256": "afa8effbef2eeb567de425794c81675b3907df4481e4f94e1a45271ef35408c3",
+      "finalStateSha256": "2e2702ffcc626f665ce68db8d0bc984e3fe778f1a5ea3eae93ef0d0220c22a5b",
+      "previewBeforeSha256": "fb0e21316a0de0be5e841feee99611accd2a2b9e6b5857d197eaf48b0f68e8df",
+      "previewAfterSha256": "fb0e21316a0de0be5e841feee99611accd2a2b9e6b5857d197eaf48b0f68e8df",
+      "previewAfterUndoSha256": "fb0e21316a0de0be5e841feee99611accd2a2b9e6b5857d197eaf48b0f68e8df"
+    },
+    "signature": "jssQU4dFa2fC1AMJZ2UerKJd+12xhD7e+BDiEvZJ9TU03gv1SEabn0f5ZJZy/NdUE1GpabjUAib5QFe89tvTCg=="
+  }
+}

@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "kind": "feature",
+  "featureId": "documents.export",
+  "catalogContractSha256": "0bd3c82c163bdd8f6d35507af0bb2fd7768801cd40f3d63bfa8a5937d098d1e8",
+  "capturedAt": "2026-08-22T11:36:14.314Z",
+  "host": {
+    "application": "Photoshop",
+    "appVersion": "27.9.1",
+    "locale": "ko_KR",
+    "pluginVersion": "2.0.0",
+    "protocol": "ps-mcp-bridge/2",
+    "connectedAtCapture": true
+  },
+  "fixture": {
+    "isolatedDocument": true,
+    "temporaryDocumentClosed": true,
+    "executionPassed": true,
+    "stateVerified": true,
+    "undoRoundTripVerified": null,
+    "previewVerified": true
+  },
+  "result": "passed",
+  "provenance": {
+    "version": 1,
+    "method": "live-mcp-stdio-v1",
+    "transactionId": "00f0c11a-4a1d-4055-b3ea-6115c8b4f462",
+    "requestId": "1c789a17-4a06-453c-8158-b34740ed46d9",
+    "serverId": "3fa7fcec-db4d-4894-bdce-96a80069334f",
+    "steps": {
+      "hostDescribe": true,
+      "validation": true,
+      "preview": true,
+      "tempDocumentClose": true,
+      "commandRequestIds": [
+        "1c789a17-4a06-453c-8158-b34740ed46d9",
+        "8470ecc3-8dea-46cc-b8c8-69db97e29f70",
+        "c201ab85-65e8-4279-a3d6-f6228c2bb955"
+      ],
+      "closeRequestId": "69f288f6-b738-494d-b158-88b529d8260d",
+      "beforeStateSha256": "2e2702ffcc626f665ce68db8d0bc984e3fe778f1a5ea3eae93ef0d0220c22a5b",
+      "afterStateSha256": "2307cf38c7e1b61d56a9addedbfaa756eb0c2ab25512deecf1a255ae714da090",
+      "finalStateSha256": "2e2702ffcc626f665ce68db8d0bc984e3fe778f1a5ea3eae93ef0d0220c22a5b",
+      "previewBeforeSha256": "a1804089a60b904f8a635d5601d85541ed44a4d23d8effb928a6b983fe62bccf",
+      "previewAfterSha256": "a1804089a60b904f8a635d5601d85541ed44a4d23d8effb928a6b983fe62bccf",
+      "exportChecks": [
+        {
+          "format": "png",
+          "bytes": 2484,
+          "sha256": "33932c7f81195ff424bdc7e52f9f303451f0e45395d082d75c0f4a18568e8327",
+          "signature": "89504e470d0a1a0a"
+        },
+        {
+          "format": "jpg",
+          "bytes": 13551,
+          "sha256": "cfce7ddc7a173f36b6e5f1c41592666609983ccc55a6fca48d8745663eaeed02",
+          "signature": "ffd8ff"
+        },
+        {
+          "format": "psd",
+          "bytes": 25490,
+          "sha256": "d00a70263f9cbe3ebe04202667d6369727578ff73fc4dcf750949318aa70c464",
+          "signature": "38425053"
+        }
+      ]
+    },
+    "signature": "O74DMEQvOdZByd7VS61zJMAtKyuZ/Srtz2+LWo2h3xxohwGfiVXef4wThM5BqO4wPBxGzpqsa7dzt/q7mHziDg=="
+  }
+}

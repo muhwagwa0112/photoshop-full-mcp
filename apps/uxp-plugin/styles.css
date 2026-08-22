@@ -1,0 +1,96 @@
+:root {
+  --panel-bg: #2b2b2b;
+  --card-bg: #353535;
+  --border: #4a4a4a;
+  --text: #f2f2f2;
+  --muted: #b8b8b8;
+  --ok: #57b86a;
+  --warn: #e4a84b;
+  --bad: #df6464;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--panel-bg);
+  color: var(--text);
+  font-family: system-ui, sans-serif;
+  font-size: 12px;
+}
+
+main { padding: 12px; }
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+h1 { margin: 0; font-size: 16px; }
+h2 { margin: 0 0 8px; font-size: 13px; }
+
+.card {
+  padding: 12px;
+  margin-bottom: 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card-bg);
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.wrap { flex-wrap: wrap; }
+.row sp-textfield { flex: 1; min-width: 120px; }
+button {
+  min-height: 30px;
+  padding: 5px 12px;
+  border: 1px solid #777;
+  border-radius: 16px;
+  background: #4b4b4b;
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+}
+button.primary { background: #1473e6; border-color: #1473e6; }
+button.danger { background: #b83a3a; border-color: #d15a5a; }
+button:focus { outline: 2px solid #ffffff; outline-offset: 2px; }
+button:disabled { opacity: 0.55; }
+label { display: block; color: var(--muted); margin-top: 8px; }
+.muted { color: var(--muted); margin: 4px 0 8px; line-height: 1.4; }
+
+.badge {
+  padding: 3px 7px;
+  border-radius: 10px;
+  color: #111;
+  font-weight: 600;
+}
+
+.badge.online { background: var(--ok); }
+.badge.connecting { background: var(--warn); }
+.badge.offline { background: var(--bad); }
+
+.activity {
+  min-height: 46px;
+  max-height: 130px;
+  overflow: auto;
+  color: var(--muted);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.hidden { display: none; }
+.approval-label { margin: 4px 0; font-weight: 600; }
+.manual-instruction { margin: 8px 0; line-height: 1.5; white-space: pre-wrap; }
+.approval-consequence { margin: 8px 0; line-height: 1.5; white-space: pre-wrap; }
+.scope-digest { margin: 8px 0; color: var(--muted); font-family: monospace; overflow-wrap: anywhere; }
+
+/* Approval actions must remain visible even in Photoshop's minimum panel size. */
+.approval-mode main > .card:not(#pendingApprovalCard) { display: none; }
+.approval-mode #pendingApprovalCard { margin-bottom: 0; }

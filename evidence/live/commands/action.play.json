@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "kind": "command",
+  "commandId": "action.play",
+  "catalogContractSha256": "de7c943f0eddf799003a0d4127d2999bdf48a848340e7e24be13d79f0969b7d8",
+  "capturedAt": "2026-08-22T11:44:31.894Z",
+  "host": {
+    "application": "Photoshop",
+    "appVersion": "27.9.1",
+    "locale": "ko_KR",
+    "pluginVersion": "2.0.0",
+    "protocol": "ps-mcp-bridge/2",
+    "connectedAtCapture": true
+  },
+  "fixture": {
+    "isolatedDocument": true,
+    "temporaryDocumentClosed": true,
+    "executionPassed": true,
+    "stateVerified": true,
+    "undoRoundTripVerified": true,
+    "previewVerified": true
+  },
+  "result": "passed",
+  "provenance": {
+    "version": 1,
+    "method": "live-mcp-stdio-v1",
+    "transactionId": "66103c07-34c3-4918-b13a-1659b34b7cc9",
+    "requestId": "11121f72-641f-4354-a81f-5a68bc2458c8",
+    "serverId": "3fa7fcec-db4d-4894-bdce-96a80069334f",
+    "steps": {
+      "hostDescribe": true,
+      "validation": true,
+      "preview": true,
+      "undo": true,
+      "tempDocumentClose": true,
+      "bootstrapRequestId": "569e2ff0-c6a1-4941-85da-e7371febb050",
+      "setupRequestIds": [],
+      "targetRequestId": "11121f72-641f-4354-a81f-5a68bc2458c8",
+      "undoRequestId": "2d805ee1-4955-4a58-93ab-95019c121a87",
+      "closeRequestId": "7b5b954a-6342-4280-8b26-dc122eabcb70",
+      "closeRequestIds": [
+        "7b5b954a-6342-4280-8b26-dc122eabcb70"
+      ],
+      "beforeStateSha256": "e4552496176147e8ac8ae09abc608ed6c7440504d003a19a4ed5ac3dfbb78515",
+      "afterStateSha256": "c495548a9ab4f0fcf5ed55aecee0397e3597e6d667e604d66f91a28a36e77fc2",
+      "finalStateSha256": "2e2702ffcc626f665ce68db8d0bc984e3fe778f1a5ea3eae93ef0d0220c22a5b",
+      "previewBeforeSha256": "fb0e21316a0de0be5e841feee99611accd2a2b9e6b5857d197eaf48b0f68e8df",
+      "previewAfterSha256": "fb0e21316a0de0be5e841feee99611accd2a2b9e6b5857d197eaf48b0f68e8df",
+      "previewAfterUndoSha256": "fb0e21316a0de0be5e841feee99611accd2a2b9e6b5857d197eaf48b0f68e8df"
+    },
+    "signature": "Gh4Yth0s/BfERcxhuv0XBQrsp0sKT7kI3sxUuro0X6eXFQvtWo87rcnsjsYaGyRhpwSWIOCOWV289b70w6BwCg=="
+  }
+}

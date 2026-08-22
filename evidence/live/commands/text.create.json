@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "kind": "command",
+  "commandId": "text.create",
+  "catalogContractSha256": "77ef5ad9dfbe02f544305185fba56eb48c189f199bed7598de88f5dffeec3368",
+  "capturedAt": "2026-08-22T10:15:13.860Z",
+  "host": {
+    "application": "Photoshop",
+    "appVersion": "27.9.1",
+    "locale": "ko_KR",
+    "pluginVersion": "2.0.0",
+    "protocol": "ps-mcp-bridge/2",
+    "connectedAtCapture": true
+  },
+  "fixture": {
+    "isolatedDocument": true,
+    "temporaryDocumentClosed": true,
+    "executionPassed": true,
+    "stateVerified": true,
+    "undoRoundTripVerified": true,
+    "previewVerified": true
+  },
+  "result": "passed",
+  "provenance": {
+    "version": 1,
+    "method": "live-mcp-stdio-v1",
+    "transactionId": "439a551d-18ac-454a-a0d3-ac46a76df2db",
+    "requestId": "00aac3e0-01ae-4ee2-8cea-d340d586992c",
+    "serverId": "3fa7fcec-db4d-4894-bdce-96a80069334f",
+    "steps": {
+      "hostDescribe": true,
+      "validation": true,
+      "preview": true,
+      "undo": true,
+      "tempDocumentClose": true,
+      "bootstrapRequestId": "eabf34af-556c-4706-a30a-5f87033f4fad",
+      "setupRequestIds": [],
+      "targetRequestId": "00aac3e0-01ae-4ee2-8cea-d340d586992c",
+      "undoRequestId": "3d119f84-1a7f-46b3-8f1b-8cbf1b0341c5",
+      "closeRequestId": "a41738ca-6e67-4876-b36f-0044ebc322c6",
+      "beforeStateSha256": "1d2fe1a3d27d515ed3889b505b4aafd9ecae88cbf13b41a650f67f9c4cd82712",
+      "afterStateSha256": "d07244903ac4d5b255892b542f475b2798abd64b6f50706a710b3beb99adef44",
+      "finalStateSha256": "2e2702ffcc626f665ce68db8d0bc984e3fe778f1a5ea3eae93ef0d0220c22a5b",
+      "previewBeforeSha256": "fb0e21316a0de0be5e841feee99611accd2a2b9e6b5857d197eaf48b0f68e8df",
+      "previewAfterSha256": "f222778fc45d29f80c47892ad9d7ba15d7738232c572dbea8de579266bf98a5f",
+      "previewAfterUndoSha256": "fb0e21316a0de0be5e841feee99611accd2a2b9e6b5857d197eaf48b0f68e8df"
+    },
+    "signature": "UC/+oqsZvu+1C05FV8CjLboDRHp3gNt7ttjtceVvcmsHTb/oi2AzIGdQqBn9GvsQXK/ZicEQUAaFGHX6170qCg=="
+  }
+}

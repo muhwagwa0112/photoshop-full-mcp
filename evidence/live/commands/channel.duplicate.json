@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "kind": "command",
+  "commandId": "channel.duplicate",
+  "catalogContractSha256": "ba8fcdb9f445c23cadc87c08588478351d5c635eb319bf01c9de4a6d150794d0",
+  "capturedAt": "2026-08-22T10:31:53.933Z",
+  "host": {
+    "application": "Photoshop",
+    "appVersion": "27.9.1",
+    "locale": "ko_KR",
+    "pluginVersion": "2.0.0",
+    "protocol": "ps-mcp-bridge/2",
+    "connectedAtCapture": true
+  },
+  "fixture": {
+    "isolatedDocument": true,
+    "temporaryDocumentClosed": true,
+    "executionPassed": true,
+    "stateVerified": true,
+    "undoRoundTripVerified": true,
+    "previewVerified": true
+  },
+  "result": "passed",
+  "provenance": {
+    "version": 1,
+    "method": "live-mcp-stdio-v1",
+    "transactionId": "61eb937e-4352-46ec-a999-22dd2a6f9f0f",
+    "requestId": "b28ea029-7f15-4e97-87d8-ea85114dcd47",
+    "serverId": "3fa7fcec-db4d-4894-bdce-96a80069334f",
+    "steps": {
+      "hostDescribe": true,
+      "validation": true,
+      "preview": true,
+      "undo": true,
+      "tempDocumentClose": true,
+      "bootstrapRequestId": "bda798c4-fe20-428f-9df3-bbabcef45440",
+      "setupRequestIds": [
+        "9beca170-12dc-41c4-a8e3-cac99b43bf8b"
+      ],
+      "targetRequestId": "b28ea029-7f15-4e97-87d8-ea85114dcd47",
+      "undoRequestId": "a8544fc1-d4e7-4b1e-a67e-c9907d1fc212",
+      "closeRequestId": "a34af0c1-4f4f-4864-bbfa-a7df9173861b",
+      "beforeStateSha256": "cc09b77204e31818b7bf6fd8c14281c4c233103bdb29c5c1283cebfe5c256aad",
+      "afterStateSha256": "abfbaf60e44ebc9810ba2c5a96613df2b6ac094e64ced0163f3dca3aed8256be",
+      "finalStateSha256": "2e2702ffcc626f665ce68db8d0bc984e3fe778f1a5ea3eae93ef0d0220c22a5b",
+      "previewBeforeSha256": "fb0e21316a0de0be5e841feee99611accd2a2b9e6b5857d197eaf48b0f68e8df",
+      "previewAfterSha256": "fb0e21316a0de0be5e841feee99611accd2a2b9e6b5857d197eaf48b0f68e8df",
+      "previewAfterUndoSha256": "fb0e21316a0de0be5e841feee99611accd2a2b9e6b5857d197eaf48b0f68e8df"
+    },
+    "signature": "a1xd3vBT3oZl+v7h+pjQFr3GkS1hkqNsgq+jY5z9pMYjWjqah1rY0nSk7joPZ8bYsirDWxz4CB5RuvlsPcFwDA=="
+  }
+}

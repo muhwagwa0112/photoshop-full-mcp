@@ -1,0 +1,93 @@
+{
+  "manifestVersion": 5,
+  "id": "com.codex.photoshop-full-mcp",
+  "name": "Photoshop Full MCP Bridge",
+  "version": "2.0.0",
+  "main": "index.html",
+  "host": {
+    "app": "PS",
+    "minVersion": "24.0.0",
+    "data": {
+      "apiVersion": 2
+    }
+  },
+  "requiredPermissions": {
+    "network": {
+      "domains": [
+        "http://localhost:38452",
+        "http://localhost:38453",
+        "http://localhost:38454",
+        "http://localhost:38455",
+        "http://localhost:38456",
+        "http://localhost:38457",
+        "http://localhost:38458",
+        "http://localhost:38459",
+        "http://localhost:38460",
+        "http://localhost:38461",
+        "http://localhost:38462"
+      ]
+    },
+    "localFileSystem": "request"
+  },
+  "entrypoints": [
+    {
+      "type": "panel",
+      "id": "photoshopFullMcpPanel",
+      "label": {
+        "default": "Photoshop Full MCP"
+      },
+      "minimumSize": {
+        "width": 280,
+        "height": 360
+      },
+      "maximumSize": {
+        "width": 2000,
+        "height": 2000
+      },
+      "preferredDockedSize": {
+        "width": 320,
+        "height": 560
+      },
+      "preferredFloatingSize": {
+        "width": 360,
+        "height": 600
+      },
+      "icons": [
+        {
+          "width": 32,
+          "height": 32,
+          "path": "icons/icon_D.png",
+          "scale": [1, 2],
+          "theme": ["dark", "darkest"],
+          "species": ["generic"]
+        },
+        {
+          "width": 32,
+          "height": 32,
+          "path": "icons/icon_N.png",
+          "scale": [1, 2],
+          "theme": ["lightest", "light"],
+          "species": ["generic"]
+        }
+      ]
+    }
+  ],
+  "icons": [
+    {
+      "width": 32,
+      "height": 32,
+      "path": "icons/icon_D.png",
+      "scale": [1, 2],
+      "theme": ["dark", "darkest"],
+      "species": ["generic"]
+    },
+    {
+      "width": 32,
+      "height": 32,
+      "path": "icons/icon_N.png",
+      "scale": [1, 2],
+      "theme": ["lightest", "light"],
+      "species": ["generic"]
+    }
+  ]
+}

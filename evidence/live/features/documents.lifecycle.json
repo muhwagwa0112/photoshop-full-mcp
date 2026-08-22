@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "kind": "feature",
+  "featureId": "documents.lifecycle",
+  "catalogContractSha256": "8b71511f0db08ba8009097531a3ff830635c8235b14fc2e80939c63b724ffda8",
+  "capturedAt": "2026-08-22T12:42:25.702Z",
+  "host": {
+    "application": "Photoshop",
+    "appVersion": "27.9.1",
+    "locale": "ko_KR",
+    "pluginVersion": "2.0.0",
+    "protocol": "ps-mcp-bridge/2",
+    "connectedAtCapture": true
+  },
+  "fixture": {
+    "isolatedDocument": true,
+    "temporaryDocumentClosed": true,
+    "executionPassed": true,
+    "stateVerified": true,
+    "undoRoundTripVerified": null,
+    "previewVerified": true
+  },
+  "result": "passed",
+  "provenance": {
+    "version": 1,
+    "method": "live-mcp-stdio-v1",
+    "transactionId": "e2bacd2e-8c45-4d94-acc7-a728da60f568",
+    "requestId": "905acd20-6f5a-4cfd-9926-7987689c2258",
+    "serverId": "3fa7fcec-db4d-4894-bdce-96a80069334f",
+    "steps": {
+      "hostDescribe": true,
+      "validation": true,
+      "preview": true,
+      "tempDocumentClose": true,
+      "commandRequestIds": [
+        "905acd20-6f5a-4cfd-9926-7987689c2258",
+        "a5c32227-74ad-4d4c-b2c2-ac5d70551613",
+        "0e70d60a-b9ad-4759-a161-d12ef0d209dd",
+        "41e99feb-8bb2-408d-8a58-081dc56af6f0",
+        "7ab48aef-607b-45fb-a4cb-fe4ef2fb6489",
+        "477e88b8-e334-4e98-a12d-987487dbc035",
+        "93298cc2-1b32-4591-9bc8-9dd72855b728"
+      ],
+      "initialDocumentCount": 9,
+      "afterCreateDocumentCount": 10,
+      "afterDuplicateDocumentCount": 11,
+      "afterDuplicateCloseDocumentCount": 10,
+      "afterOpenDocumentCount": 11,
+      "afterImportedCloseDocumentCount": 10,
+      "finalDocumentCount": 9,
+      "initialActiveDocumentId": 765,
+      "sourceDocumentId": 772,
+      "duplicateDocumentId": 775,
+      "importedDocumentId": 779,
+      "finalActiveDocumentId": 765,
+      "sourcePreviewSha256": "8a9e71420ce2027c3402883e394d15cd41b3770384481803670c06a41c1e813e",
+      "importedPreviewSha256": "8a9e71420ce2027c3402883e394d15cd41b3770384481803670c06a41c1e813e",
+      "seed": {
+        "fileName": "PS_MCP_LIFECYCLE_mt4dbf06_24064008.psd",
+        "bytes": 22652,
+        "sha256": "158f9d72d872d5dabcb5a4316acef94f1b97921f104e78bd21038ed83ecf25c6",
+        "signature": "38425053",
+        "cleanedUp": true
+      },
+      "initialStateSha256": "74890f08395725ec7c59249d6baef7d552f9a0f11c5ed33812e688de41257846",
+      "finalStateSha256": "74890f08395725ec7c59249d6baef7d552f9a0f11c5ed33812e688de41257846"
+    },
+    "signature": "27L7ZiKxX+9LAPJETEE8NoRK02pBEbIc3sGxdhhvGOShJ9dmubtAaEOlzQ7k/qOIjdz0JNIai20sP7SRSWjHCg=="
+  }
+}

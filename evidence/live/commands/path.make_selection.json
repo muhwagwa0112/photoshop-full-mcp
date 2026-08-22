@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "kind": "command",
+  "commandId": "path.make_selection",
+  "catalogContractSha256": "3137ad37ffb3a118baa8a9ef7fa29f926349907adfcf8bd6867bbf830260797e",
+  "capturedAt": "2026-08-22T10:48:12.742Z",
+  "host": {
+    "application": "Photoshop",
+    "appVersion": "27.9.1",
+    "locale": "ko_KR",
+    "pluginVersion": "2.0.0",
+    "protocol": "ps-mcp-bridge/2",
+    "connectedAtCapture": true
+  },
+  "fixture": {
+    "isolatedDocument": true,
+    "temporaryDocumentClosed": true,
+    "executionPassed": true,
+    "stateVerified": true,
+    "undoRoundTripVerified": true,
+    "previewVerified": true
+  },
+  "result": "passed",
+  "provenance": {
+    "version": 1,
+    "method": "live-mcp-stdio-v1",
+    "transactionId": "c38345e9-4b78-480e-8d2f-22267a83c4bc",
+    "requestId": "3a3ebfe6-f120-4736-b98d-68c4685e263b",
+    "serverId": "3fa7fcec-db4d-4894-bdce-96a80069334f",
+    "steps": {
+      "hostDescribe": true,
+      "validation": true,
+      "preview": true,
+      "undo": true,
+      "tempDocumentClose": true,
+      "bootstrapRequestId": "cefecbb3-6aec-465e-8e7e-8b5a93ef8f39",
+      "setupRequestIds": [
+        "a0f7b54f-76e3-46c8-bab3-478642b82368",
+        "54d3744a-8df0-4fdb-867f-3e3915b964e9"
+      ],
+      "targetRequestId": "3a3ebfe6-f120-4736-b98d-68c4685e263b",
+      "undoRequestId": "b64ad972-db51-4fe1-bd94-d87ede71038f",
+      "closeRequestId": "caf6be84-3821-4622-88ae-14dc758728ca",
+      "closeRequestIds": [
+        "caf6be84-3821-4622-88ae-14dc758728ca"
+      ],
+      "beforeStateSha256": "41d162b19a3bcb9e9ea4aec22d7b46d3d4631d05440d8deeb071e88984fd4754",
+      "afterStateSha256": "73c1b13563712598387462a19b6527304da9dd94cf7b1f611b1e3bfd834bd9f5",
+      "finalStateSha256": "2e2702ffcc626f665ce68db8d0bc984e3fe778f1a5ea3eae93ef0d0220c22a5b",
+      "previewBeforeSha256": "fb0e21316a0de0be5e841feee99611accd2a2b9e6b5857d197eaf48b0f68e8df",
+      "previewAfterSha256": "fb0e21316a0de0be5e841feee99611accd2a2b9e6b5857d197eaf48b0f68e8df",
+      "previewAfterUndoSha256": "fb0e21316a0de0be5e841feee99611accd2a2b9e6b5857d197eaf48b0f68e8df"
+    },
+    "signature": "UqpOqmsjqQJHdufDU4grSjoY4f3qxxBqd38jM4QSrvkKf3cWN9RkeZI7iuO3NVU81kwnAqZ+lbR5pT0Zr8eQCQ=="
+  }
+}

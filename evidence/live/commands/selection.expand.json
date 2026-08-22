@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "kind": "command",
+  "commandId": "selection.expand",
+  "catalogContractSha256": "f8963642629ca2836b61ca43629863c3e3dea20c2887f4b6f3236d2e61e1a978",
+  "capturedAt": "2026-08-22T10:26:30.940Z",
+  "host": {
+    "application": "Photoshop",
+    "appVersion": "27.9.1",
+    "locale": "ko_KR",
+    "pluginVersion": "2.0.0",
+    "protocol": "ps-mcp-bridge/2",
+    "connectedAtCapture": true
+  },
+  "fixture": {
+    "isolatedDocument": true,
+    "temporaryDocumentClosed": true,
+    "executionPassed": true,
+    "stateVerified": true,
+    "undoRoundTripVerified": true,
+    "previewVerified": true
+  },
+  "result": "passed",
+  "provenance": {
+    "version": 1,
+    "method": "live-mcp-stdio-v1",
+    "transactionId": "4aab8e94-c6e6-428b-a76a-92841b405033",
+    "requestId": "d3c1e8ef-c274-438a-8a22-f8307d909c78",
+    "serverId": "3fa7fcec-db4d-4894-bdce-96a80069334f",
+    "steps": {
+      "hostDescribe": true,
+      "validation": true,
+      "preview": true,
+      "undo": true,
+      "tempDocumentClose": true,
+      "bootstrapRequestId": "3732d9bc-8d53-4a68-8a34-087ee58b3ead",
+      "setupRequestIds": [
+        "36cba7ec-7449-435f-94a1-7da66dc9cdb2"
+      ],
+      "targetRequestId": "d3c1e8ef-c274-438a-8a22-f8307d909c78",
+      "undoRequestId": "eb9c832f-794b-4c35-936a-132048791afd",
+      "closeRequestId": "4d4f8d06-17e1-4fdf-a76e-93130f40ff10",
+      "beforeStateSha256": "17805c9ec32762cef422569128dbb3738dec4d08a63a7225eb93ecfa2e3442a2",
+      "afterStateSha256": "423ae0fceff86f3c2559fa1b4f65e3c09e2a5da8e094d01c2553a43802385cee",
+      "finalStateSha256": "2e2702ffcc626f665ce68db8d0bc984e3fe778f1a5ea3eae93ef0d0220c22a5b",
+      "previewBeforeSha256": "fb0e21316a0de0be5e841feee99611accd2a2b9e6b5857d197eaf48b0f68e8df",
+      "previewAfterSha256": "fb0e21316a0de0be5e841feee99611accd2a2b9e6b5857d197eaf48b0f68e8df",
+      "previewAfterUndoSha256": "fb0e21316a0de0be5e841feee99611accd2a2b9e6b5857d197eaf48b0f68e8df"
+    },
+    "signature": "yJPw3i9iOl96fqq+758US5V83ZvO69wgMOYKiiy+YYZ+UrPPWkBgsbQOLtAAcTGdKiwFa6Z0ZKXpGMZxS70MDA=="
+  }
+}

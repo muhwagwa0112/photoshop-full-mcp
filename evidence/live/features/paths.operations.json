@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "kind": "feature",
+  "featureId": "paths.operations",
+  "catalogContractSha256": "4970980f93383a757bdf234eaf09a9ccc5056053788d88e443fbfdc9f7e88d1d",
+  "capturedAt": "2026-08-22T12:17:00.328Z",
+  "host": {
+    "application": "Photoshop",
+    "appVersion": "27.9.1",
+    "locale": "ko_KR",
+    "pluginVersion": "2.0.0",
+    "protocol": "ps-mcp-bridge/2",
+    "connectedAtCapture": true
+  },
+  "fixture": {
+    "isolatedDocument": true,
+    "temporaryDocumentClosed": true,
+    "executionPassed": true,
+    "stateVerified": true,
+    "undoRoundTripVerified": null,
+    "previewVerified": true
+  },
+  "result": "passed",
+  "provenance": {
+    "version": 1,
+    "method": "live-mcp-stdio-v1",
+    "transactionId": "f577f602-51da-44a3-ab4f-3fd9acce518c",
+    "requestId": "7ca60d2c-39cf-4201-a581-d6c8d21e5a9a",
+    "serverId": "3fa7fcec-db4d-4894-bdce-96a80069334f",
+    "steps": {
+      "hostDescribe": true,
+      "validation": true,
+      "preview": true,
+      "tempDocumentClose": true,
+      "commandRequestIds": [
+        "7ca60d2c-39cf-4201-a581-d6c8d21e5a9a",
+        "3c9f0c15-4d60-4e46-ab73-959f71a77569",
+        "fd6c3282-15da-490c-ad21-1e5290badc3b",
+        "ac54898d-8340-4f12-9705-b865ad8d757c",
+        "413dc800-5609-4e64-9416-c26943bb7fca",
+        "7df8141a-c327-4748-9fb6-be2d4baea07d",
+        "2a6beb9b-e228-4cc8-85f6-503c1ac453a3",
+        "53be7cc5-e371-4842-b63d-bb2af2fa4eee",
+        "8434b0d8-f558-42a4-aa37-fc4c00f4827a"
+      ],
+      "closeRequestId": "1f61642e-ecb9-4ece-b766-c376b0002adf",
+      "beforeStateSha256": "2e2702ffcc626f665ce68db8d0bc984e3fe778f1a5ea3eae93ef0d0220c22a5b",
+      "afterStateSha256": "597cc277b742cd7ac3089f3919e7db8e2c99c8ce6a9c8025c2498fff9f869754",
+      "finalStateSha256": "2e2702ffcc626f665ce68db8d0bc984e3fe778f1a5ea3eae93ef0d0220c22a5b",
+      "previewBeforeSha256": "a1804089a60b904f8a635d5601d85541ed44a4d23d8effb928a6b983fe62bccf",
+      "previewAfterSha256": "a1804089a60b904f8a635d5601d85541ed44a4d23d8effb928a6b983fe62bccf",
+      "exportChecks": []
+    },
+    "signature": "2WL9SpWiTjKbqPecik+X0dP7abagywut3NW/iofE60i3FXym6z7y7exrGN7MNL3ik6UvTVWDZIJ5SxtZVndrDg=="
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "kind": "command",
+  "commandId": "layer_comp.list",
+  "catalogContractSha256": "9374b2e862f60c8e95bbff7b1fa1a5f0f741b2185f3f8a82345ea5e69e317d5b",
+  "capturedAt": "2026-08-22T11:40:28.122Z",
+  "host": {
+    "application": "Photoshop",
+    "appVersion": "27.9.1",
+    "locale": "ko_KR",
+    "pluginVersion": "2.0.0",
+    "protocol": "ps-mcp-bridge/2",
+    "connectedAtCapture": true
+  },
+  "fixture": {
+    "isolatedDocument": true,
+    "temporaryDocumentClosed": true,
+    "executionPassed": true,
+    "stateVerified": true,
+    "undoRoundTripVerified": null,
+    "previewVerified": true
+  },
+  "result": "passed",
+  "provenance": {
+    "version": 1,
+    "method": "live-mcp-stdio-v1",
+    "transactionId": "fb9c7d88-be8f-4c7b-b39c-c1eba08a3627",
+    "requestId": "e249d643-e5ce-4250-b53a-3b993ef4f9d3",
+    "serverId": "3fa7fcec-db4d-4894-bdce-96a80069334f",
+    "steps": {
+      "hostDescribe": true,
+      "validation": true,
+      "preview": true,
+      "undo": null,
+      "tempDocumentClose": true,
+      "bootstrapRequestId": "ddcb4292-dc57-46f3-afd5-bca74d6999e3",
+      "setupRequestIds": [],
+      "targetRequestId": "e249d643-e5ce-4250-b53a-3b993ef4f9d3",
+      "undoRequestId": null,
+      "closeRequestId": "e9fedb3a-7e30-46ed-a8ad-8f4076c24357",
+      "closeRequestIds": [
+        "e9fedb3a-7e30-46ed-a8ad-8f4076c24357"
+      ],
+      "beforeStateSha256": "fd8d9ed488cf04f5ee74a522f5096e839a658c1a90c7344d030ebdda2823f656",
+      "afterStateSha256": "fd8d9ed488cf04f5ee74a522f5096e839a658c1a90c7344d030ebdda2823f656",
+      "finalStateSha256": "2e2702ffcc626f665ce68db8d0bc984e3fe778f1a5ea3eae93ef0d0220c22a5b",
+      "previewBeforeSha256": "fb0e21316a0de0be5e841feee99611accd2a2b9e6b5857d197eaf48b0f68e8df",
+      "previewAfterSha256": "fb0e21316a0de0be5e841feee99611accd2a2b9e6b5857d197eaf48b0f68e8df",
+      "previewAfterUndoSha256": null
+    },
+    "signature": "ot6WQRqKdnRHIxoOm0MT/zduJx8HI2GbLrJc/gO9NOf6bkuSZfGgsFe/OkWYRTYh8hDaXf02mj19c7WgX3WzDg=="
+  }
+}
