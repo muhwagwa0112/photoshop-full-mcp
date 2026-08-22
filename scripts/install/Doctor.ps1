@@ -81,7 +81,7 @@ if ($CheckLiveBridge) {
     foreach ($port in 38452..38462) {
         try {
             $response = Invoke-RestMethod -Uri "http://127.0.0.1:$port/v1/discovery" -Method Get -TimeoutSec 1
-            if ($response.protocol -eq 'ps-mcp-bridge/2') { $live = $true; $detail = "Bridge discovered on port $port."; break }
+            if ($response.protocol -eq 'ps-mcp-bridge/3') { $live = $true; $detail = "Bridge discovered on port $port."; break }
         } catch { }
     }
     Add-Check 'live-bridge' $live $detail

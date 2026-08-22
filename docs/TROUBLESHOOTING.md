@@ -43,9 +43,9 @@ Do not retry the same raw descriptor. Use `photoshop_command_search` to find a l
 
 Automatic approval is the default. Remove a stale `PS_MCP_APPROVAL_MODE=panel` environment override and restart Codex. Automatic mode still enforces capability gates, path confinement, replay protection, and the advanced descriptor allowlist.
 
-## Update checksum fails
+## Update signature or digest verification fails
 
-Delete the downloaded ZIP and checksum, then run Update again. Do not bypass checksum validation. A mismatch means the archive is incomplete or is not the asset described by the release.
+Delete the downloaded ZIP, signed manifest, and signature, then run Update again. Do not bypass signature, size, or digest validation. A failure means the metadata is not signed by the trusted release key, or the archive is incomplete or is not the exact asset described by the signed manifest.
 
 ## Reinstall without deleting exports
 

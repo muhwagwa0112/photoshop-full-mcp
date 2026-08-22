@@ -224,7 +224,7 @@ export class PhotoshopFullMcpServer {
     );
     this.register(
       "photoshop_pairing_begin",
-      "Display the short-lived bridge pairing code in a trusted local Windows dialog. The code is never returned to the MCP client.",
+      "Display the short-lived port-bound bridge pairing code in a trusted local Windows dialog. The value is never returned to the MCP client.",
       objectSchema(),
       async () => {
         this.assertBridgeAvailable();

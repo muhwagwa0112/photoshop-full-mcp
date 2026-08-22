@@ -5,8 +5,9 @@ const { normalizeError, PluginError } = require("./errors");
 
 const FIRST_PORT = 38452;
 const LAST_PORT = 38462;
-const PROTOCOL = "ps-mcp-bridge/2";
+const PROTOCOL = "ps-mcp-bridge/3";
 const POLL_TIMEOUT_MS = 25_000;
+const SUPPORTED_KINDS = new Set(["host.describe", "state.get", "preview.get", "command.execute", "advanced.batchplay", "approval.request", "job.resume", "job.cancel"]);
 
 // UXP 9.3 discards IP-literal manifest origins. The Node bridge still binds
 // exclusively to 127.0.0.1; localhost is only the permission-compatible client name.
@@ -25,12 +26,40 @@ async function readJson(response) {
   try { return JSON.parse(text); } catch (_) { throw new Error(`Bridge returned invalid JSON (${response.status})`); }
 }
 
+function base64url(bytes) {
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+function randomChallenge() {
+  const bytes = new Uint8Array(24);
+  crypto.getRandomValues(bytes);
+  return base64url(bytes);
+}
+
+async function discoveryProof(token, protocol, serverId, port, secretGeneration, challenge) {
+  if (!crypto.subtle || typeof crypto.subtle.importKey !== "function") {
+    throw new Error("This UXP runtime cannot authenticate the local bridge; update Photoshop before reconnecting");
+  }
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey("raw", encoder.encode(token), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const payload = [protocol, serverId, String(port), String(secretGeneration), challenge].join("\n");
+  return base64url(new Uint8Array(await crypto.subtle.sign("HMAC", key, encoder.encode(payload))));
+}
+
 async function probe(port, token) {
-  const headers = token ? { Authorization: `Bearer ${token}` } : {};
-  const response = await fetchWithTimeout(`${baseUrl(port)}/v1/discovery`, { method: "GET", headers });
+  const challenge = token ? randomChallenge() : null;
+  const suffix = challenge ? `?challenge=${encodeURIComponent(challenge)}` : "";
+  const response = await fetchWithTimeout(`${baseUrl(port)}/v1/discovery${suffix}`, { method: "GET" });
   if (!response.ok) return null;
   const data = await readJson(response);
   if (!data || data.protocol !== PROTOCOL || data.port !== port || !data.serverId) return null;
+  if (token) {
+    if (!Number.isInteger(data.secretGeneration) || typeof data.proof !== "string") return null;
+    const expected = await discoveryProof(token, data.protocol, data.serverId, data.port, data.secretGeneration, challenge);
+    if (expected.length !== data.proof.length || expected !== data.proof) return null;
+  }
   return data;
 }
 
@@ -70,13 +99,17 @@ async function discoverAllDetailed(existingToken) {
   };
 }
 
-async function pair(server, code) {
-  if (!server) throw new PluginError("HOST_ERROR", "No local bridge was discovered");
-  if (!code || typeof code !== "string") throw new PluginError("PRECONDITION_FAILED", "Pairing code is required");
+async function pair(codeValue) {
+  const match = typeof codeValue === "string" ? /^(3845[2-9]|3846[0-2])-([A-Za-z0-9_-]{16,128})$/.exec(codeValue.trim()) : null;
+  if (!match) throw new PluginError("PRECONDITION_FAILED", "Enter the complete port-code value shown by the trusted pairing dialog");
+  const port = Number(match[1]);
+  const code = match[2];
+  const server = await probe(port, null);
+  if (!server) throw new PluginError("HOST_ERROR", "The selected bridge is unavailable");
   const response = await fetchWithTimeout(`${baseUrl(server.port)}/v1/pair`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ code: code.trim(), pluginInstanceId: getPluginInstanceId() })
+    body: JSON.stringify({ code, pluginInstanceId: getPluginInstanceId() })
   }, 5000);
   const data = await readJson(response);
   if (!response.ok || !data || !data.token || !data.serverId) throw new PluginError("HOST_ERROR", (data && data.error && data.error.message) || "Pairing was rejected");
@@ -288,6 +321,7 @@ class BridgeClient {
       throw new Error("Bridge request is missing requestId, nonce, deadline, or kind");
     }
     if (!Number.isFinite(this.deadlineMs(request.deadline))) throw new Error("Bridge request deadline is invalid");
+    if (!SUPPORTED_KINDS.has(request.kind)) throw new Error(`Bridge request kind is not allowlisted: ${request.kind}`);
   }
 
   deadlineMs(value) {
@@ -379,4 +413,4 @@ class BridgeClient {
   delay(ms) { return new Promise((resolve) => setTimeout(resolve, ms)); }
 }
 
-module.exports = { BridgeClient, discover, discoverAll, pair, FIRST_PORT, LAST_PORT, PROTOCOL };
+module.exports = { BridgeClient, discover, discoverAll, pair, probe, discoveryProof, FIRST_PORT, LAST_PORT, PROTOCOL };

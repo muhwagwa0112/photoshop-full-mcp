@@ -454,7 +454,7 @@ async function hostDescribe() {
     uxp: uxpVersions,
     apiVersion: 2,
     pluginVersion: "2.0.0",
-    protocol: "ps-mcp-bridge/2",
+    protocol: "ps-mcp-bridge/3",
     executeAsModal: typeof core.executeAsModal === "function",
     runtimeProbes: {
       app: {
@@ -1858,11 +1858,50 @@ function markApprovalJob(jobId, status) {
   }
 }
 
+function validateAdvancedPayload(payload = {}) {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    throw new PluginError("APPROVAL_REQUIRED", "Advanced payload must be an object");
+  }
+  if (payload.dialog_policy !== undefined && payload.dialog_policy !== "silent" && payload.dialog_policy !== "dontDisplay") {
+    throw new PluginError("APPROVAL_REQUIRED", "Advanced execution cannot display native dialogs");
+  }
+  const descriptors = payload.descriptors;
+  if (!Array.isArray(descriptors) || descriptors.length === 0 || descriptors.length > 100) {
+    throw new PluginError("PRECONDITION_FAILED", "Advanced payload must contain 1-100 descriptors");
+  }
+  let serialized;
+  try { serialized = JSON.stringify(descriptors); } catch (_) { throw new PluginError("APPROVAL_REQUIRED", "Advanced descriptors must be serializable"); }
+  if (typeof serialized !== "string" || serialized.length > 1024 * 1024) {
+    throw new PluginError("APPROVAL_REQUIRED", "Advanced payload exceeds the 1 MiB limit");
+  }
+  for (const descriptor of descriptors) {
+    if (!descriptor || typeof descriptor !== "object" || Array.isArray(descriptor)) {
+      throw new PluginError("APPROVAL_REQUIRED", "Advanced descriptor must be an object");
+    }
+    const objectName = descriptor._obj;
+    if (objectName !== "deselect" && objectName !== "invert") {
+      throw new PluginError("APPROVAL_REQUIRED", `Advanced descriptor is not allowlisted: ${String(objectName || "missing _obj")}`);
+    }
+    if (Object.keys(descriptor).some((key) => key !== "_obj" && key !== "_options")) {
+      throw new PluginError("APPROVAL_REQUIRED", `Advanced ${objectName} descriptor contains unreviewed keys`);
+    }
+    if (descriptor._options !== undefined) {
+      const options = descriptor._options;
+      if (!options || typeof options !== "object" || Array.isArray(options)) {
+        throw new PluginError("APPROVAL_REQUIRED", "Advanced descriptor _options must be an object");
+      }
+      const entries = Object.entries(options);
+      if (entries.length !== 1 || entries[0][0] !== "dialogOptions" || entries[0][1] !== "dontDisplay") {
+        throw new PluginError("APPROVAL_REQUIRED", "Advanced descriptors may only use dialogOptions=dontDisplay");
+      }
+    }
+  }
+  return descriptors;
+}
+
 async function advancedBatchPlay(payload = {}) {
-  // The authenticated MCP bridge owns one-time approval issuance and
-  // consumption. It dispatches this request only after automatic local policy
-  // approval or an explicit optional-panel decision has completed.
-  return inModal("advanced.batchplay", () => batchPlay(payload.descriptors, payload.dialog_policy === "display" ? "display" : "dontDisplay"), true);
+  const descriptors = validateAdvancedPayload(payload);
+  return inModal("advanced.batchplay", () => batchPlay(descriptors, "dontDisplay"), true);
 }
 
 async function jobResume(payload = {}) {
@@ -1908,4 +1947,4 @@ async function dispatch(kind, payload, context) {
   }
 }
 
-module.exports = { dispatch, hostDescribe, stateGet, previewGet, commandExecute, advancedBatchPlay, onApprovalRequest, markApprovalJob, validateCoreArgs };
+module.exports = { dispatch, hostDescribe, stateGet, previewGet, commandExecute, advancedBatchPlay, validateAdvancedPayload, onApprovalRequest, markApprovalJob, validateCoreArgs };

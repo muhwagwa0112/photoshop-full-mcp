@@ -20,7 +20,7 @@ test("MCP command pipeline interoperates with an authenticated mock UXP plugin",
       PS_MCP_VALIDATION: "confirm",
       PS_MCP_APPROVAL_MODE: "panel",
       NODE_ENV: "test",
-      PS_MCP_TEST_PAIRING_CODE: "654321",
+      PS_MCP_TEST_PAIRING_CODE: "testPairingCode_654321",
     },
     stderr: "pipe",
   });
@@ -34,7 +34,7 @@ test("MCP command pipeline interoperates with an authenticated mock UXP plugin",
     const paired = await fetch(`${base}/v1/pair`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code: "654321", pluginInstanceId: "mock-uxp" }),
+      body: JSON.stringify({ code: "testPairingCode_654321", pluginInstanceId: "mock-uxp" }),
     });
     const pairData = await paired.json() as { token: string };
     assert.equal(paired.status, 200);

@@ -12,3 +12,6 @@ host-describe.json
 validation-args.json
 artifacts/
 .release-staging/
+release-signing-private.*
+*.pfx
+*.p12

@@ -29,10 +29,18 @@ test("approval tokens are command-and-arguments-bound and one-time", async () =>
   const scope = { args: {} };
   const approval = policy.issueApproval("layer.delete", scope, 10_000);
   policy.consumeApproval("layer.delete", scope, approval.token);
+  assert.equal((policy as unknown as { approvals: Map<string, unknown> }).approvals.size, 0, "consumed approval state must be reclaimed immediately");
   assert.throws(
     () => policy.consumeApproval("layer.delete", scope, approval.token),
     (error) => error instanceof PhotoshopMcpError && error.code === "APPROVAL_REQUIRED",
   );
+});
+
+test("expired approvals are reclaimed before admitting new state", async () => {
+  const policy = new PolicyEngine(await testConfig());
+  policy.issueApproval("layer.delete", { args: {} }, -1);
+  policy.issueApproval("layer.delete", { args: { id: 2 } }, 10_000);
+  assert.equal((policy as unknown as { approvals: Map<string, unknown> }).approvals.size, 1);
 });
 
 test("approval tokens reject changed destructive arguments", async () => {

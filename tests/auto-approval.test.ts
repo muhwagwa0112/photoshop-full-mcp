@@ -19,7 +19,7 @@ test("automatic approval is the default for destructive and advanced execution",
       PS_MCP_COMMAND_TIMEOUT_MS: "3000",
       PS_MCP_ADVANCED: "confirm",
       PS_MCP_APPROVAL_MODE: "auto",
-      PS_MCP_TEST_PAIRING_CODE: "765432",
+      PS_MCP_TEST_PAIRING_CODE: "testPairingCode_765432",
       NODE_ENV: "test",
     },
     stderr: "pipe",
@@ -34,7 +34,7 @@ test("automatic approval is the default for destructive and advanced execution",
     const paired = await fetch(`${base}/v1/pair`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code: "765432", pluginInstanceId: "mock-auto-uxp" }),
+      body: JSON.stringify({ code: "testPairingCode_765432", pluginInstanceId: "mock-auto-uxp" }),
     });
     const pairData = await paired.json() as { token: string };
     assert.equal(paired.status, 200);

@@ -34,8 +34,7 @@ async function initialize() {
   byId("pairButton").addEventListener("click", async () => {
     try {
       status("connecting", "페어링 중…");
-      lastServer = lastServer || await discover();
-      const result = await pair(lastServer, byId("pairCode").value || "");
+      const result = await pair(byId("pairCode").value || "");
       byId("pairCode").value = "";
       activity(`페어링 완료: ${result.serverId}`);
       await client.reconnect();
@@ -46,7 +45,7 @@ async function initialize() {
   });
 
   byId("reconnectButton").addEventListener("click", async () => {
-    lastServer = await discover();
+      lastServer = await discover();
     activity(lastServer ? `브리지 발견: ${lastServer.port}` : "브리지를 찾지 못했습니다.");
     await client.reconnect();
   });

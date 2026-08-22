@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHmac } from "node:crypto";
 import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -33,6 +34,16 @@ test("bridge pairs, authenticates, dispatches, and rejects replay", async () => 
     const localhostDiscovery = await fetch(`http://localhost:${port}/v1/discovery`).then((r) => r.json()) as { serverId: string };
     assert.equal(localhostDiscovery.serverId, discovery.serverId, "UXP localhost origin must reach the same loopback bridge over IPv6 or IPv4");
     assert.equal(discovery.serverId, settings.serverId);
+    const challenge = "a".repeat(32);
+    const provenResponse = await fetch(`http://127.0.0.1:${port}/v1/discovery?challenge=${challenge}`);
+    const proven = await provenResponse.json() as { protocol: string; serverId: string; port: number; secretGeneration: number; proof: string; bridgeToken?: string };
+    const expectedProof = createHmac("sha256", settings.bridgeToken)
+      .update([proven.protocol, proven.serverId, String(port), String(proven.secretGeneration), challenge].join("\n"))
+      .digest("base64url");
+    assert.equal(proven.proof, expectedProof);
+    assert.equal(proven.bridgeToken, undefined, "discovery proof must not disclose the bearer");
+    assert.equal(provenResponse.headers.get("cache-control"), "no-store");
+    assert.equal((await fetch(`http://127.0.0.1:${port}/v1/discovery?challenge=short`)).status, 400);
     const unauthorized = await fetch(`http://127.0.0.1:${port}/v1/poll`);
     assert.equal(unauthorized.status, 401);
 
@@ -246,11 +257,12 @@ test("authenticated panel decisions update awaiting-user jobs", async () => {
   }
 });
 
-test("pairing endpoint rate limits repeated invalid codes", async () => {
+test("pairing rate limit blocks guesses without locking out the correct code", async () => {
   const settings = await config();
   const bridge = new BridgeServer(settings, new JobStore());
   const port = await bridge.start();
   try {
+    assert.match(bridge.status(true).pairingCode ?? "", /^[A-Za-z0-9_-]{22}$/, "production pairing codes must carry 128 bits of entropy");
     for (let attempt = 0; attempt < 5; attempt += 1) {
       const response = await fetch(`http://127.0.0.1:${port}/v1/pair`, {
         method: "POST",
@@ -259,12 +271,18 @@ test("pairing endpoint rate limits repeated invalid codes", async () => {
       });
       assert.equal(response.status, 401);
     }
-    const limited = await fetch(`http://127.0.0.1:${port}/v1/pair`, {
+    const limitedGuess = await fetch(`http://127.0.0.1:${port}/v1/pair`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code: bridge.status(true).pairingCode, pluginInstanceId: "attacker" }),
+      body: JSON.stringify({ code: "invalid", pluginInstanceId: "attacker" }),
     });
-    assert.equal(limited.status, 429);
+    assert.equal(limitedGuess.status, 429);
+    const legitimate = await fetch(`http://127.0.0.1:${port}/v1/pair`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: bridge.status(true).pairingCode, pluginInstanceId: "legitimate-plugin" }),
+    });
+    assert.equal(legitimate.status, 200, "a correct code must bypass another process's exhausted invalid-attempt quota");
   } finally {
     await bridge.stop();
   }

@@ -4,11 +4,17 @@ const assert = require("assert");
 const Module = require("module");
 const path = require("path");
 const fs = require("fs");
+const advancedCalls = [];
 
 const originalLoad = Module._load;
 Module._load = function load(request, parent, isMain) {
   if (request === "photoshop") {
-    return { app: {}, action: {}, core: {}, imaging: {}, constants: {} };
+    return {
+      app: {},
+      action: { async batchPlay(descriptors, options) { advancedCalls.push({ descriptors, options }); return [{ ok: true }]; } },
+      core: { async executeAsModal(fn) { return fn({ hostControl: {} }); } },
+      imaging: {}, constants: {}
+    };
   }
   if (request === "./storage" && parent && parent.filename.endsWith(`${path.sep}lib${path.sep}commands.js`)) {
     return {
@@ -27,6 +33,24 @@ Module._load = function load(request, parent, isMain) {
     const shown = [];
     commands.onApprovalRequest((job) => shown.push(job));
     const context = { serverPort: 38452, serverId: "shared-server" };
+
+    assert.deepStrictEqual(commands.validateAdvancedPayload({ descriptors: [{ _obj: "deselect" }] }), [{ _obj: "deselect" }]);
+    await commands.dispatch("advanced.batchplay", { descriptors: [{ _obj: "invert", _options: { dialogOptions: "dontDisplay" } }], dialog_policy: "silent" }, context);
+    assert.strictEqual(advancedCalls.length, 1);
+    assert.strictEqual(advancedCalls[0].descriptors[0]._options.dialogOptions, "dontDisplay");
+    const rejectedAdvanced = [
+      { descriptors: [{ _obj: "set" }] },
+      { descriptors: [{ _obj: "deselect", _target: [{ _ref: "layer" }] }] },
+      { descriptors: [{ _obj: "invert", _options: { dialogOptions: "display" } }] },
+      { descriptors: [{ _obj: "deselect" }], dialog_policy: "display" },
+      { descriptors: [] },
+      { descriptors: Array.from({ length: 101 }, () => ({ _obj: "deselect" })) },
+      { descriptors: [{ _obj: "x".repeat(1024 * 1024 + 1) }] }
+    ];
+    for (const payload of rejectedAdvanced) {
+      await assert.rejects(commands.dispatch("advanced.batchplay", payload, context), /Advanced|1-100/);
+    }
+    assert.strictEqual(advancedCalls.length, 1, "rejected advanced payloads must never reach Photoshop batchPlay");
 
     const approval = await commands.dispatch("approval.request", {
       jobId: "approval-job",

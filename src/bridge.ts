@@ -1,4 +1,4 @@
-import { createHash, randomInt, randomUUID, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import { spawn } from "node:child_process";
 import { constants as fsConstants, createReadStream } from "node:fs";
 import { copyFile, mkdir, open, realpath, rm, stat } from "node:fs/promises";
@@ -48,7 +48,7 @@ async function readJson(req: IncomingMessage, maxBytes = 2 * 1024 * 1024): Promi
 }
 
 export interface BridgeStatus {
-  protocol: "ps-mcp-bridge/2";
+  protocol: "ps-mcp-bridge/3";
   serverId: string;
   port?: number;
   paired: boolean;
@@ -129,7 +129,7 @@ export class BridgeServer {
     this.refreshPairingCode();
     const connected = typeof this.lastSeenAt === "number" && Date.now() - this.lastSeenAt < 3_000;
     return {
-      protocol: "ps-mcp-bridge/2",
+      protocol: "ps-mcp-bridge/3",
       serverId: this.config.serverId,
       ...(this.port !== undefined ? { port: this.port } : {}),
       paired: this.paired,
@@ -154,7 +154,7 @@ export class BridgeServer {
       child.once("exit", (exitCode) => exitCode === 0 ? resolve() : reject(new Error(`Pairing dialog exited with code ${exitCode}`)));
       child.stdin.end([
         "Add-Type -AssemblyName PresentationFramework",
-        `[System.Windows.MessageBox]::Show('Photoshop MCP v2 pairing code: ${code}` + "`nEnter this code in the Photoshop panel before closing this dialog.', 'Photoshop MCP v2 Pairing') | Out-Null",
+        `[System.Windows.MessageBox]::Show('Photoshop MCP v3 pairing code: ${this.port}-${code}` + "`nEnter the complete port-code value in the Photoshop panel before closing this dialog.', 'Photoshop MCP v3 Pairing') | Out-Null",
       ].join("\n"));
     });
   }
@@ -184,10 +184,10 @@ export class BridgeServer {
   }
 
   private newPairingCode(): string {
-    if (process.env.NODE_ENV === "test" && /^\d{6}$/.test(process.env.PS_MCP_TEST_PAIRING_CODE ?? "")) {
+    if (process.env.NODE_ENV === "test" && /^[A-Za-z0-9_-]{16,128}$/.test(process.env.PS_MCP_TEST_PAIRING_CODE ?? "")) {
       return process.env.PS_MCP_TEST_PAIRING_CODE as string;
     }
-    return String(randomInt(0, 1_000_000)).padStart(6, "0");
+    return randomBytes(16).toString("base64url");
   }
 
   private refreshPairingCode(): void {
@@ -334,11 +334,22 @@ export class BridgeServer {
       if (req.method === "GET" && url.pathname === "/v1/discovery") {
         await refreshBridgeSecret(this.config);
         this.syncPersistentPairing();
+        const challenge = url.searchParams.get("challenge");
+        if (challenge !== null && !/^[A-Za-z0-9_-]{32,128}$/.test(challenge)) {
+          json(res, 400, { ok: false, error: "invalid_discovery_challenge" });
+          return;
+        }
+        const secretGeneration = this.config.secretGeneration ?? 0;
+        const proofPayload = challenge === null
+          ? undefined
+          : ["ps-mcp-bridge/3", this.config.serverId, String(this.port), String(secretGeneration), challenge].join("\n");
         json(res, 200, {
-          protocol: "ps-mcp-bridge/2",
+          protocol: "ps-mcp-bridge/3",
           serverId: this.config.serverId,
           port: this.port,
+          secretGeneration,
           pairingRequired: !this.paired,
+          ...(proofPayload ? { proof: createHmac("sha256", this.config.bridgeToken).update(proofPayload).digest("base64url") } : {}),
         });
         return;
       }
@@ -346,23 +357,22 @@ export class BridgeServer {
         await refreshBridgeSecret(this.config);
         this.syncPersistentPairing();
         this.refreshPairingCode();
-        const cutoff = Date.now() - 60_000;
-        this.pairingFailures = this.pairingFailures.filter((attempt) => attempt >= cutoff);
-        if (this.pairingFailures.length >= 5) {
-          json(res, 429, { ok: false, error: "pairing_rate_limited", retryAfterSeconds: 60 });
-          return;
-        }
         const body = await readJson(req, 16 * 1024);
         const code = typeof body.code === "string" ? body.code : "";
         const supplied = Buffer.from(code);
         const expected = Buffer.from(this.pairingCode);
-        if (supplied.length !== expected.length || !timingSafeEqual(supplied, expected)) {
+        const validCode = supplied.length === expected.length && timingSafeEqual(supplied, expected);
+        const cutoff = Date.now() - 60_000;
+        this.pairingFailures = this.pairingFailures.filter((attempt) => attempt >= cutoff);
+        if (!validCode && this.pairingFailures.length >= 5) {
+          json(res, 429, { ok: false, error: "pairing_rate_limited", retryAfterSeconds: 60 });
+          return;
+        }
+        if (!validCode) {
           this.pairingFailures.push(Date.now());
           json(res, 401, { ok: false, error: "invalid_pairing_code" });
           return;
         }
-        this.paired = true;
-        this.pairingFailures = [];
         const pluginInstanceId = typeof body.pluginInstanceId === "string" ? body.pluginInstanceId : "";
         if (!/^[A-Za-z0-9_-]{8,200}$/.test(pluginInstanceId)) {
           json(res, 400, { ok: false, error: "invalid_plugin_instance" });
@@ -370,6 +380,7 @@ export class BridgeServer {
         }
         await persistBridgePairing(this.config, pluginInstanceId);
         this.syncPersistentPairing();
+        this.pairingFailures = [];
         this.lastSeenAt = Date.now();
         this.pairingCode = this.newPairingCode();
         this.pairingCodeExpiresAt = Date.now() + 5 * 60_000;

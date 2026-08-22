@@ -15,11 +15,40 @@ export interface JobRecord {
   error?: unknown;
 }
 
+export interface JobStoreOptions {
+  maxEntries?: number;
+  terminalTtlMs?: number;
+  activeTtlMs?: number;
+  now?: () => number;
+}
+
+const TERMINAL_STATUSES = new Set<JobStatus>(["completed", "failed", "cancelled"]);
+
 export class JobStore {
   private readonly jobs = new Map<string, JobRecord>();
 
+  constructor(private readonly options: JobStoreOptions = {}) {}
+
+  private now(): number { return this.options.now?.() ?? Date.now(); }
+
+  private prune(): void {
+    const now = this.now();
+    const terminalTtl = this.options.terminalTtlMs ?? 10 * 60_000;
+    const activeTtl = this.options.activeTtlMs ?? 24 * 60 * 60_000;
+    for (const [id, job] of this.jobs) {
+      const updatedAt = Date.parse(job.updatedAt);
+      const ttl = TERMINAL_STATUSES.has(job.status) ? terminalTtl : activeTtl;
+      if (!Number.isFinite(updatedAt) || now - updatedAt >= ttl) this.jobs.delete(id);
+    }
+  }
+
   create(commandId: string, status: JobStatus = "queued", extras: Partial<JobRecord> = {}): JobRecord {
-    const now = new Date().toISOString();
+    this.prune();
+    const maxEntries = this.options.maxEntries ?? 1_024;
+    if (this.jobs.size >= maxEntries) {
+      throw new PhotoshopMcpError("MODAL_BUSY", "Too many active jobs; complete or cancel existing work before creating another job");
+    }
+    const now = new Date(this.now()).toISOString();
     const job: JobRecord = {
       id: randomUUID(),
       commandId,
@@ -34,15 +63,17 @@ export class JobStore {
   }
 
   get(id: string): JobRecord {
+    this.prune();
     const job = this.jobs.get(id);
     if (!job) throw new PhotoshopMcpError("PRECONDITION_FAILED", `Unknown job: ${id}`);
     return structuredClone(job);
   }
 
   update(id: string, patch: Partial<Omit<JobRecord, "id" | "commandId" | "kind" | "createdAt">>): JobRecord {
+    this.prune();
     const current = this.jobs.get(id);
     if (!current) throw new PhotoshopMcpError("PRECONDITION_FAILED", `Unknown job: ${id}`);
-    const updated = { ...current, ...patch, updatedAt: new Date().toISOString() };
+    const updated = { ...current, ...patch, updatedAt: new Date(this.now()).toISOString() };
     this.jobs.set(id, updated);
     return structuredClone(updated);
   }
@@ -54,6 +85,7 @@ export class JobStore {
   }
 
   list(): JobRecord[] {
+    this.prune();
     return [...this.jobs.values()].map((job) => structuredClone(job));
   }
 }

@@ -9,8 +9,9 @@ interface ApprovalRecord {
   commandId: string;
   scopeDigest: string;
   expiresAt: number;
-  used: boolean;
 }
+
+const MAX_OUTSTANDING_APPROVALS = 1_024;
 
 function canonicalize(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(canonicalize);
@@ -33,7 +34,17 @@ export class PolicyEngine {
 
   constructor(private readonly config: ServerConfig) {}
 
+  private pruneApprovals(now = Date.now()): void {
+    for (const [key, record] of this.approvals) {
+      if (record.expiresAt < now) this.approvals.delete(key);
+    }
+  }
+
   issueApproval(commandId: string, scope: unknown, ttlMs = 60_000): { token: string; expiresAt: number; scopeDigest: string } {
+    this.pruneApprovals();
+    if (this.approvals.size >= MAX_OUTSTANDING_APPROVALS) {
+      throw new PhotoshopMcpError("MODAL_BUSY", "Too many outstanding approvals; wait for existing approvals to expire");
+    }
     const token = randomBytes(24).toString("base64url");
     const key = randomBytes(12).toString("hex");
     const expiresAt = Date.now() + ttlMs;
@@ -42,23 +53,24 @@ export class PolicyEngine {
       commandId,
       scopeDigest: approvalScopeDigest(scope),
       expiresAt,
-      used: false,
     });
     return { token: `${key}.${token}`, expiresAt, scopeDigest: approvalScopeDigest(scope) };
   }
 
   consumeApproval(commandId: string, scope: unknown, token: unknown): void {
+    this.pruneApprovals();
     if (typeof token !== "string") throw new PhotoshopMcpError("APPROVAL_REQUIRED", `Approval is required for ${commandId}`);
     const [key, secret] = token.split(".", 2);
-    const record = key ? this.approvals.get(key) : undefined;
-    if (!record || !secret || record.used || record.expiresAt < Date.now() || record.commandId !== commandId || record.scopeDigest !== approvalScopeDigest(scope)) {
+    if (!key || !secret) throw new PhotoshopMcpError("APPROVAL_REQUIRED", "Approval token is invalid, expired, or already used");
+    const record = this.approvals.get(key);
+    if (!record || record.expiresAt < Date.now() || record.commandId !== commandId || record.scopeDigest !== approvalScopeDigest(scope)) {
       throw new PhotoshopMcpError("APPROVAL_REQUIRED", "Approval token is invalid, expired, or already used");
     }
     const actual = Buffer.from(secret);
     if (actual.length !== record.tokenHash.length || !timingSafeEqual(actual, record.tokenHash)) {
       throw new PhotoshopMcpError("APPROVAL_REQUIRED", "Approval token is invalid");
     }
-    record.used = true;
+    this.approvals.delete(key);
   }
 
   authorize(command: CommandDefinition, args: Record<string, unknown>, approvalToken?: unknown): void {

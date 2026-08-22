@@ -73,13 +73,21 @@ global.fetch = async (url, options) => {
     const bridge = require("../lib/bridge.js");
 
     fetchHandler = async (url) => {
-      const port = Number(new URL(url).port);
-      if (port === 38452 || port === 38453) return response(200, { serverId: "shared-server", protocol: bridge.PROTOCOL, port, pairingRequired: false });
-      if (port === 38454) return response(200, { serverId: "other-server", protocol: bridge.PROTOCOL, port, pairingRequired: false });
+      const parsed = new URL(url);
+      const port = Number(parsed.port);
+      const challenge = parsed.searchParams.get("challenge");
+      if (port === 38452 || port === 38453) return response(200, {
+        serverId: "shared-server", protocol: bridge.PROTOCOL, port, secretGeneration: 1, pairingRequired: false,
+        proof: await bridge.discoveryProof("test-token", bridge.PROTOCOL, "shared-server", port, 1, challenge)
+      });
+      if (port === 38454) return response(200, { serverId: "shared-server", protocol: bridge.PROTOCOL, port, secretGeneration: 1, pairingRequired: false, proof: "invalid" });
       return response(404);
     };
     const servers = await bridge.discoverAll("test-token");
     assert.deepStrictEqual(servers.map((server) => server.port), [38452, 38453], "all matching servers should be discovered");
+    for (const call of calls.filter((entry) => new URL(entry.url).pathname === "/v1/discovery")) {
+      assert.strictEqual(call.options.headers, undefined, "unverified discovery must not receive a bearer or plugin instance");
+    }
 
     const contexts = [];
     const client = new bridge.BridgeClient(async (kind, payload, context) => {
@@ -95,7 +103,13 @@ global.fetch = async (url, options) => {
       const parsed = new URL(url);
       const port = Number(parsed.port);
       if (parsed.pathname === "/v1/discovery") {
-        if (port === 38452 || port === 38453) return response(200, { serverId: "shared-server", protocol: bridge.PROTOCOL, port, pairingRequired: false });
+        if (port === 38452 || port === 38453) {
+          const challenge = parsed.searchParams.get("challenge");
+          return response(200, {
+            serverId: "shared-server", protocol: bridge.PROTOCOL, port, secretGeneration: 1, pairingRequired: false,
+            proof: await bridge.discoveryProof("test-token", bridge.PROTOCOL, "shared-server", port, 1, challenge)
+          });
+        }
         return response(404);
       }
       if (parsed.pathname === "/v1/unpair") return response(200, { ok: true });
@@ -104,6 +118,24 @@ global.fetch = async (url, options) => {
     const unpaired = await client.unpairAll();
     assert.deepStrictEqual(unpaired.ports, [38452, 38453], "unpair must rotate every authenticated matching bridge");
     assert.deepStrictEqual(calls.filter((call) => call.url.endsWith("/v1/unpair")).map((call) => Number(new URL(call.url).port)), [38452, 38453]);
+
+    calls.length = 0;
+    fetchHandler = async (url, options) => {
+      const parsed = new URL(url);
+      if (parsed.port !== "38453") return response(404);
+      if (parsed.pathname === "/v1/discovery") return response(200, { serverId: "shared-server", protocol: bridge.PROTOCOL, port: 38453, secretGeneration: 1, pairingRequired: false });
+      if (parsed.pathname === "/v1/pair") {
+        const body = JSON.parse(options.body);
+        assert.strictEqual(body.code, "testPairingCode_123456");
+        return response(200, { token: "new-token", serverId: "shared-server" });
+      }
+      return response(404);
+    };
+    const paired = await bridge.pair("38453-testPairingCode_123456");
+    assert.deepStrictEqual(paired, { serverId: "shared-server", port: 38453 });
+    assert.strictEqual(calls.some((call) => new URL(call.url).pathname === "/v1/pair"), true, "a plugin with cleared storage must be able to re-pair an already-paired server");
+    assert.deepStrictEqual([...new Set(calls.map((call) => Number(new URL(call.url).port)))], [38453], "initial pairing must contact only the trusted dialog-selected port");
+    await assert.rejects(bridge.pair("testPairingCode_123456"), /complete port-code/, "a bare code must fail before any network request");
 
     const workerStarts = [];
     const originalPollWorker = client.pollWorker.bind(client);

@@ -83,6 +83,9 @@ try {
         if (-not (Test-Path -LiteralPath $toolSource -PathType Leaf)) { throw "Installer lifecycle tool is missing: $toolName" }
         Copy-Item -LiteralPath $toolSource -Destination (Join-Path $toolsStage $toolName) -Force
     }
+    $releasePublicKey = Join-Path $PSScriptRoot 'release-signing-public.xml'
+    if (-not (Test-Path -LiteralPath $releasePublicKey -PathType Leaf)) { throw 'Installer release signing public key is missing.' }
+    Copy-Item -LiteralPath $releasePublicKey -Destination (Join-Path $toolsStage 'release-signing-public.xml') -Force
     $ccxSource = Get-ChildItem -LiteralPath $inputRoot -Filter 'photoshop-full-mcp-v*.ccx' -File -ErrorAction SilentlyContinue | Select-Object -First 1
     $stagedCcxPath = $null
     if ($ccxSource) {

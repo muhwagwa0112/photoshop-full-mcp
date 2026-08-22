@@ -13,10 +13,11 @@ Close Codex before installing so the next launch discovers the new MCP registrat
 
 ## 2. Download the release
 
-Open the [latest release](https://github.com/muhwagwa0112/photoshop-full-mcp/releases/latest) and download both:
+Open the [latest release](https://github.com/muhwagwa0112/photoshop-full-mcp/releases/latest) and download:
 
 - `photoshop-full-mcp-v2.0.0-windows.zip`
-- `photoshop-full-mcp-v2.0.0-windows.zip.sha256`
+
+The release also publishes `photoshop-full-mcp-v2.0.0-windows.zip.manifest.json` and its `.sig`. An installed trusted version verifies those files before downloading or extracting an update. The `.sha256` asset is retained only as a convenient corruption check.
 
 Extract the ZIP. The source-code **Download ZIP** menu shown below is a fallback for contributors; ordinary users should prefer the release asset because it already contains the production runtime and CCX package.
 
@@ -64,7 +65,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "$env:LOCALAPPDATA\PS_MCP\ap
 1. Open **Plugins > Photoshop Full MCP Bridge** in Photoshop.
 2. Restart Codex and start a new task.
 3. Call `photoshop_pairing_begin` on `photoshop_full_mcp`.
-4. Copy the six-digit code from the trusted local Windows dialog into the Photoshop panel.
+4. Copy the complete `port-code` value (for example, `38452-AbCdEfGhIjKlMnOpQrStUv`) from the trusted local Windows dialog into the Photoshop panel. The code is a short-lived 128-bit capability, not a six-digit PIN.
 5. Call `photoshop_host_describe`.
 
 The installation is successful when the response identifies the Photoshop, UXP, and bridge versions and reports `bridge.connected: true`. The pairing code is intentionally never returned by `photoshop_host_describe`.
@@ -77,7 +78,7 @@ If the bridge is disconnected, leave the panel open, run Doctor with `-Live`, an
 powershell -NoProfile -ExecutionPolicy Bypass -File "$env:LOCALAPPDATA\PS_MCP\app\tools\Update.ps1"
 ```
 
-Update queries the latest public GitHub release, downloads the Windows ZIP and checksum, verifies SHA-256, and performs the same transactional install. To test an already-downloaded archive:
+Update queries the configured GitHub release, verifies the RSA-signed release manifest with the public key installed by the previous trusted version, then downloads the exact archive bound by that signature. It verifies the archive name, size, and SHA-256 before extraction and performs the same transactional install. To update from an already-downloaded archive, keep its `.manifest.json` and `.manifest.json.sig` sidecars beside it:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File "$env:LOCALAPPDATA\PS_MCP\app\tools\Update.ps1" -PackagePath .\photoshop-full-mcp-v2.0.0-windows.zip
