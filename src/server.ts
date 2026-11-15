@@ -1,4 +1,19 @@
 import { randomUUID } from "node:crypto";
+import { Ajv, type ValidateFunction } from "ajv";
+import { digest } from "./automation/canonical.js";
+import { RuntimeClient } from "./runtime-client.js";
+import { encodePng } from "./png.js";
+import { join } from "node:path";
+import { mkdir } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { WorkflowService } from "./automation/service.js";
+import { loadAutomationConfiguration } from "./automation/configuration.js";
+import { registerAutomationTools } from "./automation/mcp.js";
+import type { HostRef, OperationRequest } from "./automation/contracts.js";
+import { createConfiguredWorker } from "./workers/configured-client.js";
+import { PhotoshopAutomationAdapter } from "./adobe-automation-adapter.js";
+import { runtimeIdentity } from "./runtime-version.js";
+import { commandRuntimeAvailability } from "./runtime-capabilities.js";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { CallToolRequestSchema, ListToolsRequestSchema, type Tool } from "@modelcontextprotocol/sdk/types.js";
@@ -42,9 +57,18 @@ function objectSchema(properties: JsonObject = {}, required: string[] = []): Jso
   return { type: "object", additionalProperties: false, properties, ...(required.length ? { required } : {}) };
 }
 
+const TARGET_SCHEMA = objectSchema({
+  kind: { type: "string", enum: ["ps_document", "ps_layer"] },
+  documentId: { type: "integer", minimum: 1 },
+  layerIds: { type: "array", items: { type: "integer", minimum: 1 }, minItems: 1, uniqueItems: true },
+  workingAssetId: { type: "string", minLength: 1 },
+  host: objectSchema({ app: { const: "photoshop" }, installationId: { type: "string", minLength: 1 }, hostEpoch: { type: "string", minLength: 1 } }, ["app", "installationId", "hostEpoch"]),
+}, ["kind", "documentId", "host"]);
+
 interface RegisteredTool {
   definition: Tool;
   handler: (args: JsonObject) => Promise<ToolResult>;
+  validate?: ValidateFunction;
 }
 
 type UnknownRecord = Record<string, unknown>;
@@ -158,11 +182,17 @@ export class PhotoshopFullMcpServer {
   private readonly policy: PolicyEngine;
   private readonly bridge: BridgeServer;
   private readonly tools = new Map<string, RegisteredTool>();
-  private readonly idempotency = new Map<string, McpEnvelope>();
+  private readonly commandCalls = new Map<string, { digest: string; promise: Promise<ToolResult> }>();
+  private readonly ajv = new Ajv({ allErrors: true, useDefaults: true, strict: false });
+  private readonly runtimeClient: RuntimeClient;
   private readonly approvalJobs = new Map<string, { commandId: string; scope: unknown }>();
   private bridgeStartError?: string;
+  private automation: WorkflowService | undefined;
+  private automationAdapter: PhotoshopAutomationAdapter | undefined;
+  private setupIssues: string[] = [];
 
-  private constructor(private readonly config: ServerConfig, private readonly catalog: CommandCatalog) {
+  private constructor(private readonly config: ServerConfig, private readonly catalog: CommandCatalog, private readonly isRuntimeOwner = false) {
+    this.runtimeClient = new RuntimeClient(config);
     this.policy = new PolicyEngine(config);
     this.bridge = new BridgeServer(config, this.jobs);
     this.server = new Server(
@@ -181,24 +211,75 @@ export class PhotoshopFullMcpServer {
     this.setupHandlers();
   }
 
-  static async create(config: ServerConfig, catalog: CommandCatalog): Promise<PhotoshopFullMcpServer> {
-    return new PhotoshopFullMcpServer(config, catalog);
+  static async create(config: ServerConfig, catalog: CommandCatalog, options: { runtimeOwner?: boolean } = {}): Promise<PhotoshopFullMcpServer> {
+    return new PhotoshopFullMcpServer(config, catalog, options.runtimeOwner === true);
   }
 
   async start(): Promise<void> {
-    try {
-      const port = await this.bridge.start();
-      process.stderr.write(`[photoshop-full-mcp] bridge listening on 127.0.0.1:${port}\n`);
-    } catch (error) {
-      this.bridgeStartError = error instanceof Error ? error.message : String(error);
-      process.stderr.write(`[photoshop-full-mcp] bridge unavailable: ${this.bridgeStartError}; MCP read-only diagnostics remain available\n`);
-    }
+    if (this.isRuntimeOwner) throw new Error("Runtime owners do not use the stdio transport");
+    await this.runtimeClient.ensureStarted();
     await this.server.connect(new StdioServerTransport());
   }
 
-  async stop(): Promise<void> {
-    await this.bridge.stop();
-    await this.server.close();
+  async startRuntime(): Promise<void> {
+    const port = await this.bridge.start();
+    const configuration = await loadAutomationConfiguration({ dataDirectory: this.config.dataDir, legacyRoots: this.config.allowedRoots, defaultOutputDirectory: this.config.exportDir });
+    const premiereDirectory = process.env.PREMIERE_MCP_AUTOMATION_DATA_DIR || join(process.env.LOCALAPPDATA || tmpdir(), "PremiereMCP", "automation");
+    const peerStaging = join(premiereDirectory, "assets");
+    const peerWorkspace = process.env.PREMIERE_AUTOMATION_ROOT || join(premiereDirectory, "workspace");
+    await mkdir(peerStaging, { recursive: true });
+    await mkdir(peerWorkspace, { recursive: true });
+    configuration.roots.premiere_staging ??= { path: peerStaging, readOnly: true };
+    configuration.roots.premiere_workspace ??= { path: peerWorkspace, readOnly: true };
+    configuration.roots.premiere_output ??= { path: peerWorkspace, readOnly: false };
+    const worker = await createConfiguredWorker({ dataDirectory: this.config.dataDir, roots: configuration.roots });
+    this.setupIssues = configuration.setupIssues;
+    this.automation = new WorkflowService({ workflowHome: { app: "photoshop", installationId: this.config.serverId, namespaceId: `photoshop:${this.config.serverId}` }, dataDirectory: this.config.dataDir, roots: configuration.roots,
+      presets: configuration.presets, sequencePresets: configuration.sequencePresets, ...(worker ? { worker } : {}) });
+    this.automationAdapter = new PhotoshopAutomationAdapter(this.config, this.bridge, this.automation.assets, worker);
+    this.automation.registerHost("photoshop", this.automationAdapter, () => this.automationAdapter!.resolveHost());
+    if (configuration.controller) this.automation.configureOllama(configuration.controller);
+    registerAutomationTools({ register: (name, description, inputSchema, handler, annotations) => {
+      // The common handler owns strict Draft 2020-12 validation, including its
+      // registered cross-schema references; do not reinterpret it as Draft 7.
+      this.tools.set(name, { definition: { name, description, inputSchema: inputSchema as Tool["inputSchema"], annotations }, handler });
+    } }, { service: this.automation, prefix: "photoshop" });
+    await this.automation.start();
+    process.stderr.write(`[photoshop-full-mcp] runtime owner bridge listening on 127.0.0.1:${port}\n`);
+  }
+
+  async stopRuntime(): Promise<void> { await this.automation?.close(); await this.bridge.stop(); }
+  async stop(): Promise<void> { await this.server.close(); }
+  canStopRuntime(): boolean { return !this.bridge.hasActiveOperations() && !this.automation?.hasActiveWork() && !this.jobs.list().some(job => ["running", "cancel_requested", "awaiting_user"].includes(job.status)); }
+  runtimeStatus(): unknown { return { ...this.bridge.status(), ...runtimeIdentity(), workflowHome: { app: "photoshop", installationId: this.config.serverId, namespaceId: `photoshop:${this.config.serverId}` }, setupIssues: this.setupIssues }; }
+  listToolDefinitions(): Tool[] { return [...this.tools.values()].map((tool) => tool.definition); }
+
+  async callHost(method: string, args: JsonObject): Promise<unknown> {
+    const adapter = this.automationAdapter;
+    if (!adapter) throw new Error("Photoshop automation adapter is not ready");
+    if (method === "resolveHost") return adapter.resolveHost();
+    if (method === "describeCapabilities") return adapter.describeCapabilities(args.host as HostRef);
+    if (["prepare", "dispatch", "readPostcondition"].includes(method)) {
+      if (!args.request || typeof args.request !== "object" || Array.isArray(args.request)) throw new Error("A canonical OperationRequest is required");
+      const request = args.request as unknown as OperationRequest;
+      if (method === "prepare") return adapter.prepare(request);
+      if (method === "dispatch") return adapter.dispatch(request);
+      return adapter.readPostcondition(request);
+    }
+    if (typeof args.operationId !== "string" || !args.operationId) throw new Error("An operationId is required");
+    if (method === "getReceipt") return adapter.getReceipt(args.operationId);
+    if (method === "requestCancel") return adapter.requestCancel(args.operationId);
+    throw new Error("Unsupported host adapter method");
+  }
+
+  async callTool(name: string, args: JsonObject): Promise<ToolResult> {
+    const registered = this.tools.get(name);
+    if (!registered) throw new Error(`Tool not found: ${name}`);
+    try {
+      const input = structuredClone(args);
+      if (registered.validate && !registered.validate(input)) throw new PhotoshopMcpError("PRECONDITION_FAILED", `Invalid arguments for ${name}`, registered.validate.errors);
+      return await registered.handler(input);
+    } catch (error) { return result(failureEnvelope(name, randomUUID(), error), true); }
   }
 
   private register(name: string, description: string, inputSchema: JsonObject, handler: RegisteredTool["handler"], annotations?: Tool["annotations"]): void {
@@ -211,6 +292,7 @@ export class PhotoshopFullMcpServer {
         ...(annotations ? { annotations } : {}),
       },
       handler,
+      validate: this.ajv.compile(inputSchema),
     });
   }
 
@@ -235,7 +317,7 @@ export class PhotoshopFullMcpServer {
     );
     this.register(
       "photoshop_capability_list",
-      "List the versioned command catalog. Supported means locally verified; unverified and unavailable are never executed.",
+      "List catalog implementation status separately from connected-host method/target availability. Unverified and unavailable catalog commands are not executed.",
       objectSchema({
         status: { type: "string", enum: ["supported", "experimental", "requires_user", "unavailable", "unverified"] },
         category: { type: "string" },
@@ -252,12 +334,12 @@ export class PhotoshopFullMcpServer {
         });
         let runtime: unknown;
         if (this.bridge.status().connected) {
-          const probe = await this.bridge.dispatch("host.describe", {});
-          runtime = probe.ok ? probe.data : { probeError: probe.error };
+          try { const probe = await this.bridge.dispatch("host.describe", {}); runtime = probe.ok ? probe.data : { probeError: probe.error }; }
+          catch (error) { runtime = { probeError: error instanceof Error ? error.message : String(error) }; }
         }
         return result({
           summary: { commands: summarize(commands), inventory: summarize(inventory) },
-          ...(filters.summary_only ? {} : { commands, inventory }),
+          ...(filters.summary_only ? {} : { commands: commands.map(command => ({ ...command, runtimeAvailability: commandRuntimeAvailability(command, runtime) })), inventory }),
           runtime: runtime ?? { bridgeConnected: false, note: "Runtime probes are available after the UXP panel is paired" },
         });
       },
@@ -266,14 +348,17 @@ export class PhotoshopFullMcpServer {
     this.register(
       "photoshop_state_get",
       "Return live document, active layer, selection, and history state from the UXP plugin. Side effects: none.",
-      objectSchema(),
-      async () => this.bridgeTool("state.get", {}),
+      objectSchema({ target: TARGET_SCHEMA }),
+      async (args) => this.bridgeTool("state.get", args),
       { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
     );
     this.register(
       "photoshop_preview_get",
-      "Return a low-resolution JPEG preview of the active Photoshop document. Side effects: temporary export only.",
-      objectSchema({ max_edge: { type: "integer", minimum: 128, maximum: 2048, default: 1024 } }),
+      "Return document/layer/ROI/mask evidence with actual source bounds, dimensions, profile and alpha metadata.",
+      objectSchema({ max_edge: { type: "integer", minimum: 64, maximum: 2048, default: 1024 }, target: TARGET_SCHEMA,
+        kind: { type: "string", enum: ["composite", "layer", "roi", "mask"], default: "composite" },
+        region: objectSchema({ x: { type: "number" }, y: { type: "number" }, width: { type: "number", exclusiveMinimum: 0 }, height: { type: "number", exclusiveMinimum: 0 } }, ["x", "y", "width", "height"]),
+        format: { type: "string", enum: ["png", "jpeg"], default: "png" } }),
       async (args) => this.preview(args),
       { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
     );
@@ -297,6 +382,7 @@ export class PhotoshopFullMcpServer {
       objectSchema({
         command_id: { type: "string" },
         args: { type: "object" },
+        target: TARGET_SCHEMA,
         idempotency_key: { type: "string", minLength: 8, maxLength: 200 },
         approval_token: { type: "string" },
         dialog_mode: { type: "string", enum: ["silent", "display"] },
@@ -331,7 +417,14 @@ export class PhotoshopFullMcpServer {
       "photoshop_job_cancel",
       "Cancel a queued, running, or awaiting-user Photoshop job.",
       objectSchema({ job_id: { type: "string" } }, ["job_id"]),
-      async (args) => result(this.jobs.cancel(String(args.job_id))),
+      async (args) => {
+        const job = this.jobs.cancel(String(args.job_id));
+        if (job.operationId) await this.bridge.requestCancel(job.operationId);
+        if (job.kind !== "operation" && this.bridge.status().connected) {
+          await this.dispatchBridge("job.cancel", { jobId: job.id });
+        }
+        return result(job);
+      },
       { destructiveHint: false, idempotentHint: true, openWorldHint: false },
     );
     this.register(
@@ -379,6 +472,14 @@ export class PhotoshopFullMcpServer {
         { destructiveHint: true, idempotentHint: false, openWorldHint: false },
       );
     }
+    this.register("photoshop_operation_get", "Query a retained host operation, including a late result after a caller timeout.",
+      objectSchema({ operation_id: { type: "string", minLength: 1, maxLength: 256 } }, ["operation_id"]),
+      async (args) => result(await this.bridge.reconcile(String(args.operation_id)) ?? { found: false }),
+      { readOnlyHint: true, idempotentHint: true, openWorldHint: false });
+    this.register("photoshop_operation_cancel", "Request cooperative host cancellation; returns whether stopping is confirmed.",
+      objectSchema({ operation_id: { type: "string", minLength: 1, maxLength: 256 } }, ["operation_id"]),
+      async (args) => result(await this.bridge.requestCancel(String(args.operation_id))),
+      { readOnlyHint: false, idempotentHint: true, openWorldHint: false });
     this.registerTypedConvenienceTools();
   }
 
@@ -397,24 +498,18 @@ export class PhotoshopFullMcpServer {
       this.register(
         toolName,
         `Typed convenience tool for ${commandId}. Uses the same catalog policy and verification pipeline.`,
-        schema,
-        async (args) => this.executeCommand({ command_id: commandId, args }),
-        { destructiveHint: false, idempotentHint: false, openWorldHint: false },
+        { ...schema, properties: { ...asRecord(schema.properties), target: TARGET_SCHEMA, idempotency_key: { type: "string", minLength: 8, maxLength: 200 } } },
+        async (args) => { const { target, idempotency_key, ...commandArgs } = args; return this.executeCommand({ command_id: commandId, args: commandArgs, ...(target ? { target } : {}), ...(idempotency_key ? { idempotency_key } : {}) }); },
+        { readOnlyHint: this.catalog.get(commandId).risk === "read", destructiveHint: ["destructive", "external", "credit"].includes(this.catalog.get(commandId).risk), idempotentHint: this.catalog.get(commandId).risk === "read", openWorldHint: false },
       );
     }
   }
 
   private setupHandlers(): void {
-    this.server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools: [...this.tools.values()].map((tool) => tool.definition) }));
-    this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
-      const registered = this.tools.get(request.params.name);
-      if (!registered) throw new Error(`Tool not found: ${request.params.name}`);
-      try {
-        return await registered.handler((request.params.arguments ?? {}) as JsonObject);
-      } catch (error) {
-        return result(failureEnvelope(request.params.name, randomUUID(), error), true);
-      }
-    });
+    this.server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools: this.isRuntimeOwner ? this.listToolDefinitions() : await this.runtimeClient.call<Tool[]>("listTools", {}) }));
+    this.server.setRequestHandler(CallToolRequestSchema, async (request) => this.isRuntimeOwner
+      ? this.callTool(request.params.name, (request.params.arguments ?? {}) as JsonObject)
+      : this.runtimeClient.call<ToolResult>("callTool", { name: request.params.name, arguments: request.params.arguments ?? {} }));
   }
 
   private async hostDescribe(): Promise<ToolResult> {
@@ -447,10 +542,15 @@ export class PhotoshopFullMcpServer {
   }
 
   private async preview(args: JsonObject): Promise<ToolResult> {
-    const response = await this.dispatchBridge("preview.get", { maxEdge: args.max_edge ?? 1024 });
+    const response = await this.dispatchBridge("preview.get", { ...args, maxEdge: args.max_edge ?? 1024 });
     if (!response.ok) throw new PhotoshopMcpError("HOST_ERROR", response.error?.message ?? "Preview failed", response.error);
-    const data = response.data as { base64?: string; mimeType?: string; preview?: { base64?: string; mimeType?: string }; [key: string]: unknown } | undefined;
+    const data = response.data as { base64?: string; mimeType?: string; preview?: { base64?: string; mimeType?: string; rawPixels?: string; width?: number; height?: number; components?: number }; [key: string]: unknown } | undefined;
     const preview = data?.preview ?? data;
+    if (preview && "rawPixels" in preview && typeof preview.rawPixels === "string") {
+      const encoded = encodePng(Buffer.from(preview.rawPixels, "base64"), Number(preview.width), Number(preview.height), Number(preview.components));
+      preview.base64 = encoded.toString("base64"); preview.mimeType = "image/png";
+      delete preview.rawPixels;
+    }
     if (preview?.base64) {
       return {
         content: [{ type: "image", data: preview.base64, mimeType: preview.mimeType ?? "image/jpeg" }],
@@ -462,54 +562,55 @@ export class PhotoshopFullMcpServer {
 
   private async executeCommand(input: JsonObject): Promise<ToolResult> {
     const commandId = String(input.command_id);
-    const requestId = randomUUID();
-    const idempotencyKey = typeof input.idempotency_key === "string" ? input.idempotency_key : undefined;
-    if (idempotencyKey && this.idempotency.has(idempotencyKey)) return result(this.idempotency.get(idempotencyKey));
-    try {
-      const command = this.catalog.get(commandId);
-      const args = this.catalog.validate(commandId, input.args ?? {});
-      const approvalToken = this.approvalToken(command.id, { args }, input.approval_token, command.approval !== "none");
-      this.policy.authorize(command, args, approvalToken);
-      if (command.engine === "user_assisted") {
-        const before = await this.requireBridgeData("state.get", {});
-        const host = needsHostPrerequisiteState(command) ? await this.requireBridgeData("host.describe", {}) : undefined;
-        assertCommandPrerequisites(command, before, host);
-        return await this.startUserAssisted(command, args, requestId);
-      }
-      const prerequisiteState = command.verification !== "none" || command.prerequisites.length
-        ? await this.requireBridgeData("state.get", {})
-        : undefined;
-      const before = command.verification !== "none" ? prerequisiteState : undefined;
-      const host = needsHostPrerequisiteState(command) ? await this.requireBridgeData("host.describe", {}) : undefined;
-      assertCommandPrerequisites(command, prerequisiteState, host);
-      const raw = await this.dispatchBridge("command.execute", {
-        commandId,
-        args: this.dispatchArgs(commandId, args),
-        dialogMode: input.dialog_mode ?? "silent",
-        verification: input.verification ?? command.verification,
-      }, command.risk === "credit" ? 180_000 : this.config.commandTimeoutMs);
-      if (!raw.ok) throw new PhotoshopMcpError(bridgeErrorCode(raw.error?.code), raw.error?.message ?? `${commandId} failed`, raw.error);
-      const after = command.verification !== "none" ? await this.requireBridgeData("state.get", {}) : undefined;
-      const envelope: McpEnvelope = {
-        ok: true,
-        requestId,
-        commandId,
-        status: "completed",
-        summary: `${command.labels.ko} 완료`,
-        result: raw.data,
-        warnings: command.status === "experimental" ? ["Experimental command; inspect the preview before continuing"] : [],
-        ...(before !== undefined ? { before } : {}),
-        ...(after !== undefined ? { after } : {}),
-        undo: { available: command.rollback === "history", ...(command.rollback === "history" ? { historyStates: 1 } : {}) },
-      };
-      if (idempotencyKey) {
-        this.idempotency.set(idempotencyKey, envelope);
-        if (this.idempotency.size > 1_000) this.idempotency.delete(this.idempotency.keys().next().value as string);
-      }
-      return result(envelope);
-    } catch (error) {
-      return result(failureEnvelope(commandId, requestId, error), true);
+    const command = this.catalog.get(commandId);
+    const args = this.catalog.validate(commandId, input.args ?? {});
+    const operationId = typeof input.idempotency_key === "string" ? `legacy:${input.idempotency_key}` : randomUUID();
+    const requestDigest = digest({ commandId, args, target: input.target ?? null, dialogMode: input.dialog_mode ?? "silent", verification: input.verification ?? command.verification });
+    const prior = this.commandCalls.get(operationId);
+    if (prior) {
+      if (prior.digest !== requestDigest) throw new PhotoshopMcpError("IDEMPOTENCY_CONFLICT", "The operation key is bound to different arguments", { operationId });
+      return prior.promise;
     }
+    const promise = (async (): Promise<ToolResult> => {
+      try {
+        const retained = this.bridge.operation(operationId);
+        if (retained && retained.command.requestDigest !== requestDigest) throw new PhotoshopMcpError("IDEMPOTENCY_CONFLICT", "The operation key is bound to different arguments", { operationId });
+        let raw;
+        if (retained) raw = await this.bridge.dispatch("command.execute", retained.command.payload, this.config.commandTimeoutMs, { operationId, requestDigest });
+        else {
+          const approvalToken = this.approvalToken(command.id, { args }, input.approval_token, command.approval !== "none");
+          this.policy.authorize(command, args, approvalToken);
+          if (command.engine === "user_assisted") {
+            const before = await this.requireBridgeData("state.get", {});
+            const host = needsHostPrerequisiteState(command) ? await this.requireBridgeData("host.describe", {}) : undefined;
+            assertCommandPrerequisites(command, before, host);
+            return this.startUserAssisted(command, args, operationId, requestDigest);
+          }
+          const target = input.target ?? (command.prerequisites.includes("document") ? await this.requireBridgeData("target.capture", {}) : undefined);
+          raw = await this.bridge.dispatch("command.execute", {
+            commandId, args: this.dispatchArgs(commandId, args),
+            ...(target ? { target } : {}), prerequisites: command.prerequisites, minHostVersion: command.minHostVersion,
+            dialogMode: input.dialog_mode ?? "silent", verification: input.verification ?? command.verification,
+          }, command.risk === "credit" ? 180_000 : this.config.commandTimeoutMs, { operationId, requestDigest });
+        }
+        if (!raw.ok) throw new PhotoshopMcpError(bridgeErrorCode(raw.error?.code), raw.error?.message ?? `${commandId} failed`, { ...raw.error, effect: raw.effect, operationId });
+        const data = asRecord(raw.data) ?? {};
+        if (data.awaitingUser === true && typeof data.jobId === "string") return result({ ok: true, requestId: operationId, commandId, status: "awaiting_user", summary: "Photoshop에서 사용자 입력을 기다리는 중입니다", result: { jobId: data.jobId }, warnings: ["The Photoshop dialog must be completed or cancelled by the user"] });
+        const envelope: McpEnvelope = {
+          ok: true, requestId: operationId, commandId, status: "completed", summary: `${command.labels.ko} 완료`,
+          result: data.result ?? raw.data,
+          warnings: command.status === "experimental" ? ["Experimental command; inspect the returned evidence"] : [],
+          ...(data.before !== undefined ? { before: data.before } : {}),
+          ...(data.after !== undefined ? { after: data.after } : {}),
+          ...(data.undo !== undefined ? { undo: data.undo as NonNullable<McpEnvelope["undo"]> } : {}),
+        };
+        return result({ ...envelope, ...(data.verification ? { verification: data.verification } : {}), ...(data.evidence ? { evidence: data.evidence } : {}) });
+      } catch (error) { return result(failureEnvelope(commandId, operationId, error), true); }
+    })();
+    this.commandCalls.set(operationId, { digest: requestDigest, promise });
+    // This is only an in-flight waiter cache. The owner journal is authoritative.
+    void promise.finally(() => this.commandCalls.delete(operationId));
+    return promise;
   }
 
   private async requireBridgeData(kind: string, payload: JsonObject): Promise<unknown> {
@@ -523,15 +624,13 @@ export class PhotoshopFullMcpServer {
     return this.policy.issueApproval(commandId, scope).token;
   }
 
-  private dispatchArgs(commandId: string, args: JsonObject): JsonObject {
-    return this.config.approvalMode === "auto" && commandId === "document.export"
-      ? { ...args, overwrite_approved: true }
-      : args;
+  private dispatchArgs(_commandId: string, args: JsonObject): JsonObject {
+    return args;
   }
 
-  private async startUserAssisted(command: CommandDefinition, args: JsonObject, requestId: string): Promise<ToolResult> {
+  private async startUserAssisted(command: CommandDefinition, args: JsonObject, requestId: string, requestDigest: string): Promise<ToolResult> {
     const job = this.jobs.create(command.id, "queued", { kind: "user_assisted", message: "Waiting for the Photoshop panel" });
-    const response = await this.dispatchBridge("command.execute", { commandId: command.id, args, jobId: job.id, dialogMode: "display" });
+    const response = await this.bridge.dispatch("command.execute", { commandId: command.id, args, jobId: job.id, dialogMode: "display" }, this.config.commandTimeoutMs, { operationId: requestId, requestDigest });
     if (!response.ok) {
       this.jobs.update(job.id, { status: "failed", error: response.error });
       throw new PhotoshopMcpError("HOST_ERROR", response.error?.message ?? `${command.id} failed`, response.error);

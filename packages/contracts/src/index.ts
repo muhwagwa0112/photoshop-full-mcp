@@ -7,7 +7,7 @@ export const CAPABILITY_STATUSES = [
 ] as const;
 
 export const RISK_LEVELS = ["read", "edit", "destructive", "external", "credit"] as const;
-export const JOB_STATUSES = ["queued", "running", "awaiting_user", "completed", "failed", "cancelled"] as const;
+export const JOB_STATUSES = ["queued", "running", "cancel_requested", "awaiting_user", "completed", "failed", "cancelled"] as const;
 export const ERROR_CODES = [
   "NO_DOCUMENT",
   "PRECONDITION_FAILED",
@@ -22,6 +22,12 @@ export const ERROR_CODES = [
   "CREDITS_EXHAUSTED",
   "HOST_ERROR",
   "VERIFICATION_FAILED",
+  "OUTCOME_UNKNOWN",
+  "RESULT_EXPIRED",
+  "IDEMPOTENCY_CONFLICT",
+  "STALE_TARGET",
+  "OUTPUT_CONFLICT",
+  "CAPABILITY_UNAVAILABLE",
 ] as const;
 
 export type CapabilityStatus = (typeof CAPABILITY_STATUSES)[number];
@@ -59,6 +65,12 @@ export interface FeatureDefinition {
 }
 
 export interface BridgeCommand {
+  executionProtocol?: "ps-mcp-executor/1";
+  operationId?: string;
+  requestDigest?: string;
+  ownerGeneration?: string;
+  dispatchSequence?: number;
+  hostEpoch?: string;
   requestId: string;
   nonce: string;
   deadline: number;
@@ -70,6 +82,10 @@ export interface BridgeResult {
   requestId: string;
   nonce: string;
   ok: boolean;
+  operationId?: string;
+  hostEpoch?: string;
+  effect?: "not_applied" | "applied" | "rolled_back" | "partial" | "unknown";
+  cancelRequested?: boolean;
   data?: unknown;
   error?: { code?: string; message: string; details?: unknown };
 }
@@ -78,7 +94,7 @@ export interface McpEnvelope<T = unknown> {
   ok: boolean;
   requestId: string;
   commandId: string;
-  status: "completed" | "queued" | "awaiting_user" | "failed" | "cancelled";
+  status: "completed" | "queued" | "awaiting_user" | "failed" | "cancelled" | "outcome_unknown";
   summary: string;
   result?: T;
   warnings: string[];

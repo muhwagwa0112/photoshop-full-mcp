@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "roots": {
+    "source": {
+      "path": "C:\\AdobeMcpWork\\source",
+      "readOnly": true
+    },
+    "deliveries": {
+      "path": "C:\\AdobeMcpWork\\deliveries"
+    },
+    "presets": {
+      "path": "C:\\AdobeMcpWork\\presets",
+      "readOnly": true
+    }
+  },
+  "presets": {
+    "h264-hd1080-2997-sdr-aac48-stereo.v1": {
+      "rootId": "presets",
+      "relativePath": "H264_1080p_2997.epr"
+    },
+    "h264-hd1080-30-sdr-aac48-stereo.v1": {
+      "rootId": "presets",
+      "relativePath": "H264_1080p_30.epr"
+    }
+  },
+  "sequencePresets": {
+    "interview-2997": {
+      "rootId": "presets",
+      "relativePath": "Interview_2997.sqpreset"
+    }
+  }
+}

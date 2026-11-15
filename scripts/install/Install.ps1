@@ -27,7 +27,7 @@ if ($isRelease) {
     $runtimeSource = $releaseRuntime
     $pluginSource = $releasePlugin
     $packageJson = Join-Path $runtimeSource 'package.json'
-    foreach ($required in @('package.json', 'dist\src\index.js', 'node_modules')) {
+    foreach ($required in @('package.json', 'dist\src\index.js', 'dist\src\runtime-owner.js', 'dist\src\automation\service.js', 'dist\workers\worker.py', 'node_modules')) {
         if (-not (Test-Path -LiteralPath (Join-Path $runtimeSource $required))) { throw "Release payload is incomplete: payload\runtime\$required" }
     }
 } else {
@@ -75,7 +75,19 @@ try {
     }
     Copy-Item -LiteralPath $pluginSource -Destination $stagePlugin -Recurse -Force
     if (-not (Test-Path -LiteralPath (Join-Path $stageRuntime 'dist\src\index.js'))) { throw 'Staged MCP entry point is missing.' }
+    if (-not (Test-Path -LiteralPath (Join-Path $stageRuntime 'dist\src\runtime-owner.js'))) { throw 'Staged runtime owner is missing; rebuild this source version before installing.' }
     if (-not (Test-Path -LiteralPath (Join-Path $stagePlugin 'manifest.json'))) { throw 'Staged UXP manifest is missing.' }
+
+    # Stop only this installation's authenticated owner before replacing runtime files.
+    # Active native/workflow jobs cause a refusal; the installer never kills Adobe or Node by name.
+    $previousDataDirectory = $env:PS_MCP_DATA_DIR
+    try {
+        $env:PS_MCP_DATA_DIR = $resolvedInstallRoot
+        Invoke-PsMcpCommand -FilePath 'node' -Arguments @((Join-Path $stageRuntime 'dist\src\index.js'), '--stop-runtime-owner') -FailureMessage 'Runtime owner is busy or could not stop; finish/cancel its job and retry the installation'
+    } finally {
+        if ($null -eq $previousDataDirectory) { Remove-Item Env:PS_MCP_DATA_DIR -ErrorAction SilentlyContinue }
+        else { $env:PS_MCP_DATA_DIR = $previousDataDirectory }
+    }
 
     New-Item -ItemType Directory -Path $toolsStage -Force | Out-Null
     foreach ($toolName in @('Common.ps1', 'Doctor.ps1', 'Update.ps1', 'Uninstall.ps1')) {

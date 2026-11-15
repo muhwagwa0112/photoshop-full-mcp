@@ -3,7 +3,7 @@ import { execFile } from "node:child_process";
 import { chmod, mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { delimiter, dirname, join, resolve } from "node:path";
 import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
@@ -103,7 +103,8 @@ export async function loadConfig(overrides: Partial<ServerConfig> = {}): Promise
   const secret = await loadOrCreateSecret(dataDir);
   const exportDir = resolve(overrides.exportDir ?? process.env.PS_MCP_EXPORT_DIR ?? join(dataDir, "exports"));
   await mkdir(exportDir, { recursive: true });
-  const allowedRoots = overrides.allowedRoots ?? [exportDir, tmpdir()];
+  const configuredRoots = process.env.PS_MCP_ALLOWED_ROOTS;
+  const allowedRoots = overrides.allowedRoots ?? (configuredRoots ? configuredRoots.split(delimiter).filter(Boolean) : [exportDir, tmpdir()]);
   return {
     dataDir,
     exportDir,
@@ -205,7 +206,20 @@ async function withSecretLock<T>(dataDir: string, action: () => Promise<T>): Pro
   throw new Error("Timed out acquiring the Photoshop MCP secret lock");
 }
 
-export async function refreshBridgeSecret(config: ServerConfig): Promise<void> {
-  const persisted = await readPersistedSecret(config.dataDir);
-  if (persisted) applyPersistedSecret(config, persisted);
+const secretRefresh = new WeakMap<ServerConfig, { at: number; pending?: Promise<void> }>();
+
+/** A bounded cache keeps polling off disk; external revocation is observed within one second. */
+export async function refreshBridgeSecret(config: ServerConfig, force = false): Promise<void> {
+  const previous = secretRefresh.get(config);
+  if (previous?.pending) return previous.pending;
+  if (!force && previous && Date.now() - previous.at < 1_000) return;
+  const entry: { at: number; pending?: Promise<void> } = { at: 0 };
+  const pending = (async () => {
+    const persisted = await readPersistedSecret(config.dataDir);
+    if (persisted) applyPersistedSecret(config, persisted);
+    entry.at = Date.now();
+  })();
+  entry.pending = pending;
+  secretRefresh.set(config, entry);
+  try { await pending; } finally { delete entry.pending; }
 }

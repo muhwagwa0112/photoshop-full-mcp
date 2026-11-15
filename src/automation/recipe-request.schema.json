@@ -1,0 +1,1456 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "contractVersion": {
+      "const": "1.0"
+    },
+    "requestId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "workflowHome": {
+      "$ref": "#/$defs/workflowHome"
+    },
+    "recipeId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "brief": {
+      "type": "string",
+      "minLength": 1
+    },
+    "inputs": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/assetLocator"
+      },
+      "minProperties": 1,
+      "maxProperties": 512,
+      "propertyNames": {
+        "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+      }
+    },
+    "parameters": {
+      "type": "object"
+    },
+    "delivery": {
+      "$ref": "#/$defs/delivery"
+    },
+    "resources": {
+      "$ref": "#/$defs/resources"
+    },
+    "review": {
+      "$ref": "#/$defs/review"
+    },
+    "controller": {
+      "$ref": "#/$defs/controller"
+    },
+    "revisionOf": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "jobId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "revisionId": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "jobId",
+        "revisionId"
+      ]
+    }
+  },
+  "required": [
+    "contractVersion",
+    "requestId",
+    "workflowHome",
+    "recipeId",
+    "brief",
+    "inputs",
+    "parameters",
+    "delivery",
+    "resources",
+    "review",
+    "controller"
+  ],
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://adobe-mcp.local/contracts/recipe-request.schema.json",
+  "title": "Proposed Adobe MCP RecipeRequest v1.0",
+  "$defs": {
+    "rational": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "num": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "den": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "num",
+        "den"
+      ]
+    },
+    "assetLocator": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "rootId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "relativePath": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "rootId",
+        "relativePath"
+      ]
+    },
+    "workflowHome": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "app": {
+          "enum": [
+            "photoshop",
+            "premiere"
+          ]
+        },
+        "installationId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "namespaceId": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "required": [
+        "app",
+        "installationId",
+        "namespaceId"
+      ]
+    },
+    "tick": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "ticks": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$"
+        }
+      },
+      "required": [
+        "ticks"
+      ]
+    },
+    "tickRange": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "start": {
+          "$ref": "#/$defs/tick"
+        },
+        "end": {
+          "$ref": "#/$defs/tick"
+        }
+      },
+      "required": [
+        "start",
+        "end"
+      ]
+    },
+    "color": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "iccProfile": {
+          "type": "string",
+          "minLength": 1
+        },
+        "primaries": {
+          "type": "string",
+          "minLength": 1
+        },
+        "transfer": {
+          "type": "string",
+          "minLength": 1
+        },
+        "matrix": {
+          "type": "string",
+          "minLength": 1
+        },
+        "bitDepth": {
+          "enum": [
+            8,
+            10,
+            12,
+            16,
+            32
+          ]
+        },
+        "range": {
+          "enum": [
+            "full",
+            "limited"
+          ]
+        },
+        "alpha": {
+          "enum": [
+            "none",
+            "straight",
+            "premultiplied"
+          ]
+        }
+      },
+      "required": [
+        "bitDepth",
+        "range",
+        "alpha"
+      ],
+      "anyOf": [
+        {
+          "required": [
+            "iccProfile"
+          ]
+        },
+        {
+          "required": [
+            "primaries",
+            "transfer",
+            "matrix"
+          ]
+        }
+      ]
+    },
+    "collision": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "onConflict": {
+          "enum": [
+            "error",
+            "version",
+            "overwrite"
+          ]
+        },
+        "expectedExistingSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "preserveSource": {
+          "const": true
+        }
+      },
+      "required": [
+        "onConflict",
+        "preserveSource"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "onConflict": {
+                "const": "overwrite"
+              }
+            },
+            "required": [
+              "onConflict"
+            ]
+          },
+          "then": {
+            "required": [
+              "expectedExistingSha256"
+            ]
+          }
+        }
+      ]
+    },
+    "encoding": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "native_project"
+            },
+            "preserveLayersOrTimeline": {
+              "const": true
+            }
+          },
+          "required": [
+            "kind",
+            "preserveLayersOrTimeline"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "image"
+            },
+            "compression": {
+              "enum": [
+                "lossless",
+                "jpeg"
+              ]
+            },
+            "jpegQuality": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 12
+            },
+            "embedIcc": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "kind",
+            "compression",
+            "embedIcc"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "video"
+            },
+            "encoderPresetId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "videoCodec": {
+              "type": "string",
+              "minLength": 1
+            },
+            "pixelFormat": {
+              "type": "string",
+              "minLength": 1
+            },
+            "fieldOrder": {
+              "enum": [
+                "progressive",
+                "top_first",
+                "bottom_first"
+              ]
+            },
+            "audioCodec": {
+              "type": "string",
+              "minLength": 1
+            },
+            "rateControl": {
+              "const": "preset"
+            },
+            "allowPresetOverrides": {
+              "const": false
+            }
+          },
+          "required": [
+            "kind",
+            "encoderPresetId",
+            "videoCodec",
+            "pixelFormat",
+            "fieldOrder",
+            "rateControl",
+            "allowPresetOverrides"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "subtitle"
+            },
+            "charset": {
+              "const": "utf-8"
+            },
+            "lineEnding": {
+              "enum": [
+                "LF",
+                "CRLF"
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "charset",
+            "lineEnding"
+          ]
+        }
+      ]
+    },
+    "audio": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sampleRate": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "channels": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "integratedLufs": {
+          "type": "number"
+        },
+        "maxTruePeakDbtp": {
+          "type": "number"
+        },
+        "channelLayout": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "sampleRate",
+        "channels",
+        "channelLayout"
+      ]
+    },
+    "range": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "whole_sequence"
+            }
+          },
+          "required": [
+            "kind"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "timeline_range"
+            },
+            "value": {
+              "$ref": "#/$defs/tickRange"
+            }
+          },
+          "required": [
+            "kind",
+            "value"
+          ]
+        }
+      ]
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "outputKey": {
+          "type": "string",
+          "minLength": 1
+        },
+        "variantKey": {
+          "type": "string",
+          "minLength": 1
+        },
+        "rootId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "relativeDirectory": {
+          "type": "string"
+        },
+        "basename": {
+          "type": "string",
+          "minLength": 1
+        },
+        "format": {
+          "enum": [
+            "psd",
+            "psb",
+            "prproj",
+            "png",
+            "jpeg",
+            "jpg",
+            "tiff",
+            "tif",
+            "mp4",
+            "mov",
+            "srt",
+            "vtt"
+          ]
+        },
+        "color": {
+          "$ref": "#/$defs/color"
+        },
+        "width": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "frameRate": {
+          "$ref": "#/$defs/rational"
+        },
+        "pixelAspect": {
+          "$ref": "#/$defs/rational"
+        },
+        "range": {
+          "$ref": "#/$defs/range"
+        },
+        "encoding": {
+          "$ref": "#/$defs/encoding"
+        },
+        "audio": {
+          "$ref": "#/$defs/audio"
+        },
+        "collision": {
+          "$ref": "#/$defs/collision"
+        }
+      },
+      "required": [
+        "outputKey",
+        "rootId",
+        "relativeDirectory",
+        "basename",
+        "format",
+        "encoding",
+        "collision"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "format": {
+                "enum": [
+                  "psd",
+                  "psb",
+                  "prproj"
+                ]
+              }
+            },
+            "required": [
+              "format"
+            ]
+          },
+          "then": {
+            "required": [],
+            "properties": {
+              "encoding": {
+                "properties": {
+                  "kind": {
+                    "const": "native_project"
+                  }
+                },
+                "required": [
+                  "kind"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "format": {
+                "enum": [
+                  "png",
+                  "jpeg",
+                  "jpg",
+                  "tiff",
+                  "tif"
+                ]
+              }
+            },
+            "required": [
+              "format"
+            ]
+          },
+          "then": {
+            "required": [
+              "width",
+              "height",
+              "color"
+            ],
+            "properties": {
+              "encoding": {
+                "properties": {
+                  "kind": {
+                    "const": "image"
+                  }
+                },
+                "required": [
+                  "kind"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "format": {
+                "enum": [
+                  "mp4",
+                  "mov"
+                ]
+              }
+            },
+            "required": [
+              "format"
+            ]
+          },
+          "then": {
+            "required": [
+              "width",
+              "height",
+              "frameRate",
+              "pixelAspect",
+              "color",
+              "range"
+            ],
+            "properties": {
+              "encoding": {
+                "properties": {
+                  "kind": {
+                    "const": "video"
+                  }
+                },
+                "required": [
+                  "kind"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "format": {
+                "enum": [
+                  "srt",
+                  "vtt"
+                ]
+              }
+            },
+            "required": [
+              "format"
+            ]
+          },
+          "then": {
+            "required": [],
+            "properties": {
+              "encoding": {
+                "properties": {
+                  "kind": {
+                    "const": "subtitle"
+                  }
+                },
+                "required": [
+                  "kind"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "format": {
+                "enum": [
+                  "jpeg",
+                  "jpg"
+                ]
+              }
+            },
+            "required": [
+              "format"
+            ]
+          },
+          "then": {
+            "properties": {
+              "color": {
+                "properties": {
+                  "alpha": {
+                    "const": "none"
+                  }
+                }
+              },
+              "encoding": {
+                "properties": {
+                  "compression": {
+                    "const": "jpeg"
+                  }
+                },
+                "required": [
+                  "jpegQuality"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "encoding": {
+                "properties": {
+                  "kind": {
+                    "const": "video"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "audioCodec"
+                ]
+              }
+            },
+            "required": [
+              "encoding"
+            ]
+          },
+          "then": {
+            "required": [
+              "audio"
+            ]
+          }
+        }
+      ]
+    },
+    "delivery": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "outputs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/artifact"
+          },
+          "minItems": 1
+        },
+        "preserveNativeEditing": {
+          "type": "boolean"
+        },
+        "allowedFallbacks": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "native_equivalent",
+              "rendered_asset",
+              "verified_ui"
+            ]
+          },
+          "minItems": 0,
+          "uniqueItems": true
+        },
+        "verifyMode": {
+          "enum": [
+            "metadata_and_changed_regions",
+            "full_decode"
+          ]
+        }
+      },
+      "required": [
+        "outputs",
+        "preserveNativeEditing",
+        "allowedFallbacks",
+        "verifyMode"
+      ]
+    },
+    "resources": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "maxHostMutations": {
+          "const": 1
+        },
+        "maxWorkerJobs": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "maxCpuThreads": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "maxTemporaryBytes": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$"
+        },
+        "maxRemoteBytes": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$"
+        },
+        "maxPaidCredits": {
+          "type": "number",
+          "minimum": 0
+        },
+        "remoteTransferAllowed": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "maxHostMutations",
+        "maxWorkerJobs",
+        "maxCpuThreads",
+        "maxTemporaryBytes",
+        "maxRemoteBytes",
+        "maxPaidCredits",
+        "remoteTransferAllowed"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "remoteTransferAllowed": {
+                "const": false
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "maxRemoteBytes": {
+                "const": "0"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "modelBudget": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "maxRequests": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "maxInputTokens": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "maxOutputTokens": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "maxImagePixels": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$"
+        },
+        "maxElapsedSeconds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "maxCostMinor": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$"
+        },
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$"
+        },
+        "enforcement": {
+          "enum": [
+            "server_enforced",
+            "client_reported"
+          ]
+        }
+      },
+      "required": [
+        "maxRequests",
+        "maxInputTokens",
+        "maxOutputTokens",
+        "maxImagePixels",
+        "maxElapsedSeconds",
+        "maxCostMinor",
+        "currency",
+        "enforcement"
+      ]
+    },
+    "controller": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "enum": [
+            "client_agent",
+            "configured_provider"
+          ]
+        },
+        "providerId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "waitDeadline": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "modelBudget": {
+          "$ref": "#/$defs/modelBudget"
+        }
+      },
+      "required": [
+        "mode",
+        "waitDeadline",
+        "modelBudget"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "mode": {
+                "const": "configured_provider"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "providerId"
+            ],
+            "properties": {
+              "modelBudget": {
+                "properties": {
+                  "enforcement": {
+                    "const": "server_enforced"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "mode": {
+                "const": "client_agent"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "modelBudget": {
+                "properties": {
+                  "enforcement": {
+                    "const": "client_reported"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "requirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "importance": {
+          "enum": [
+            "required",
+            "preference"
+          ]
+        },
+        "evaluator": {
+          "enum": [
+            "assertion",
+            "semantic",
+            "both"
+          ]
+        },
+        "assertionIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0
+        },
+        "evidenceKeys": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0
+        },
+        "passRule": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "allAssertionsPass": {
+              "const": true
+            },
+            "minConfidence": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "required": [
+            "allAssertionsPass"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "description",
+        "importance",
+        "evaluator",
+        "assertionIds",
+        "evidenceKeys",
+        "passRule"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "evaluator": {
+                "enum": [
+                  "assertion",
+                  "both"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "assertionIds": {
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "evaluator": {
+                "enum": [
+                  "semantic",
+                  "both"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "evidenceKeys": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "requirements": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/requirement"
+          },
+          "minItems": 1
+        },
+        "maxRepairs": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "maxReviewSeconds": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "enabled",
+        "requirements",
+        "maxRepairs",
+        "maxReviewSeconds"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "enabled": {
+                "const": false
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "requirements": {
+                "items": {
+                  "properties": {
+                    "evaluator": {
+                      "const": "assertion"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "oneOf": [
+    {
+      "properties": {
+        "recipeId": {
+          "const": "ps.product_variants.v1"
+        },
+        "parameters": {
+          "$ref": "recipe-parameters.schema.json#/$defs/ps.product_variants.v1"
+        },
+        "workflowHome": {
+          "properties": {
+            "app": {
+              "const": "photoshop"
+            }
+          }
+        },
+        "inputs": {
+          "required": [
+            "product",
+            "template",
+            "logo"
+          ]
+        }
+      },
+      "required": [
+        "recipeId",
+        "parameters"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "parameters": {
+                "properties": {
+                  "roleManifest": {
+                    "const": "roleManifest"
+                  }
+                },
+                "required": [
+                  "roleManifest"
+                ]
+              }
+            },
+            "required": [
+              "parameters"
+            ]
+          },
+          "then": {
+            "properties": {
+              "inputs": {
+                "required": [
+                  "roleManifest"
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "properties": {
+        "recipeId": {
+          "const": "ps.photo_composite.v1"
+        },
+        "parameters": {
+          "$ref": "recipe-parameters.schema.json#/$defs/ps.photo_composite.v1"
+        },
+        "workflowHome": {
+          "properties": {
+            "app": {
+              "const": "photoshop"
+            }
+          }
+        },
+        "inputs": {
+          "required": [
+            "photo"
+          ]
+        }
+      },
+      "required": [
+        "recipeId",
+        "parameters"
+      ]
+    },
+    {
+      "properties": {
+        "recipeId": {
+          "const": "ps.social_layout.v1"
+        },
+        "parameters": {
+          "$ref": "recipe-parameters.schema.json#/$defs/ps.social_layout.v1"
+        },
+        "workflowHome": {
+          "properties": {
+            "app": {
+              "const": "photoshop"
+            }
+          }
+        },
+        "inputs": {
+          "required": [
+            "template",
+            "subject",
+            "logo"
+          ]
+        }
+      },
+      "required": [
+        "recipeId",
+        "parameters"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "parameters": {
+                "properties": {
+                  "roleManifest": {
+                    "const": "roleManifest"
+                  }
+                },
+                "required": [
+                  "roleManifest"
+                ]
+              }
+            },
+            "required": [
+              "parameters"
+            ]
+          },
+          "then": {
+            "properties": {
+              "inputs": {
+                "required": [
+                  "roleManifest"
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "properties": {
+        "recipeId": {
+          "const": "pr.interview_captioned.v1"
+        },
+        "parameters": {
+          "$ref": "recipe-parameters.schema.json#/$defs/pr.interview_captioned.v1"
+        },
+        "workflowHome": {
+          "properties": {
+            "app": {
+              "const": "premiere"
+            }
+          }
+        },
+        "inputs": {
+          "required": [
+            "camera",
+            "voice"
+          ]
+        }
+      },
+      "required": [
+        "recipeId",
+        "parameters"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "parameters": {
+                "required": [
+                  "ducking"
+                ]
+              }
+            },
+            "required": [
+              "parameters"
+            ]
+          },
+          "then": {
+            "properties": {
+              "inputs": {
+                "required": [
+                  "music"
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "properties": {
+        "recipeId": {
+          "const": "pr.multicam_edit.v1"
+        },
+        "parameters": {
+          "$ref": "recipe-parameters.schema.json#/$defs/pr.multicam_edit.v1"
+        },
+        "workflowHome": {
+          "properties": {
+            "app": {
+              "const": "premiere"
+            }
+          }
+        },
+        "inputs": {
+          "required": []
+        }
+      },
+      "required": [
+        "recipeId",
+        "parameters"
+      ]
+    },
+    {
+      "properties": {
+        "recipeId": {
+          "const": "pr.project_revision.v1"
+        },
+        "parameters": {
+          "$ref": "recipe-parameters.schema.json#/$defs/pr.project_revision.v1"
+        },
+        "workflowHome": {
+          "properties": {
+            "app": {
+              "const": "premiere"
+            }
+          }
+        },
+        "inputs": {
+          "required": [
+            "project"
+          ]
+        }
+      },
+      "required": [
+        "recipeId",
+        "parameters"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "parameters": {
+                "properties": {
+                  "roleManifest": {
+                    "const": "roleManifest"
+                  }
+                },
+                "required": [
+                  "roleManifest"
+                ]
+              }
+            },
+            "required": [
+              "parameters"
+            ]
+          },
+          "then": {
+            "properties": {
+              "inputs": {
+                "required": [
+                  "roleManifest"
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "properties": {
+        "recipeId": {
+          "const": "cross.ps_title_to_premiere.v1"
+        },
+        "parameters": {
+          "$ref": "recipe-parameters.schema.json#/$defs/cross.ps_title_to_premiere.v1"
+        },
+        "workflowHome": {
+          "properties": {
+            "app": {
+              "const": "premiere"
+            }
+          }
+        },
+        "inputs": {
+          "required": [
+            "titleMaster",
+            "project"
+          ]
+        }
+      },
+      "required": [
+        "recipeId",
+        "parameters"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "parameters": {
+                "properties": {
+                  "roleManifest": {
+                    "const": "roleManifest"
+                  }
+                },
+                "required": [
+                  "roleManifest"
+                ]
+              }
+            },
+            "required": [
+              "parameters"
+            ]
+          },
+          "then": {
+            "properties": {
+              "inputs": {
+                "required": [
+                  "roleManifest"
+                ]
+              }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

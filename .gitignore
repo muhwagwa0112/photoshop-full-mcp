@@ -15,3 +15,10 @@ artifacts/
 release-signing-private.*
 *.pfx
 *.p12
+
+# Local automation profiles, model weights and Python bytecode.
+**/__pycache__/
+*.pyc
+profiles/local-*.json
+*.pt
+*.pth

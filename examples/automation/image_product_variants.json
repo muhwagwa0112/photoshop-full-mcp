@@ -1,0 +1,257 @@
+{
+  "contractVersion": "1.0",
+  "requestId": "63e82e2b-9941-583e-8bf3-67fac7a21923",
+  "workflowHome": {
+    "app": "photoshop",
+    "installationId": "example-photoshop-install",
+    "namespaceId": "0ac3879a-ed82-52f8-8541-f66e81167ba7"
+  },
+  "recipeId": "ps.product_variants.v1",
+  "brief": "지정 상품의 형태와 색을 유지하고 배경/여백/브랜드 위치를 맞춘 세 가지 납품 이미지를 만든다.",
+  "inputs": {
+    "product": {
+      "rootId": "source",
+      "relativePath": "products/item_001.png"
+    },
+    "template": {
+      "rootId": "source",
+      "relativePath": "templates/product_master.psd"
+    },
+    "logo": {
+      "rootId": "source",
+      "relativePath": "brand/logo.png"
+    }
+  },
+  "parameters": {
+    "roles": {
+      "product": "product",
+      "logo": "brand_mark",
+      "title": "product_title"
+    },
+    "title": "제품명 예시",
+    "variants": [
+      {
+        "key": "square",
+        "width": 2000,
+        "height": 2000
+      },
+      {
+        "key": "portrait",
+        "width": 1600,
+        "height": 2000
+      },
+      {
+        "key": "wide",
+        "width": 1920,
+        "height": 1080
+      }
+    ],
+    "fit": "contain",
+    "backgroundColor": "#FFFFFF",
+    "preserveProductColor": true,
+    "roleManifest": "auto"
+  },
+  "delivery": {
+    "outputs": [
+      {
+        "rootId": "deliveries",
+        "relativeDirectory": "examples",
+        "basename": "product_master.psd",
+        "format": "psd",
+        "collision": {
+          "onConflict": "version",
+          "preserveSource": true
+        },
+        "outputKey": "product_master_psd",
+        "encoding": {
+          "kind": "native_project",
+          "preserveLayersOrTimeline": true
+        }
+      },
+      {
+        "rootId": "deliveries",
+        "relativeDirectory": "examples",
+        "basename": "product_square.png",
+        "format": "png",
+        "collision": {
+          "onConflict": "version",
+          "preserveSource": true
+        },
+        "width": 2000,
+        "height": 2000,
+        "color": {
+          "iccProfile": "sRGB IEC61966-2.1",
+          "bitDepth": 8,
+          "range": "full",
+          "alpha": "straight"
+        },
+        "outputKey": "product_square_png",
+        "encoding": {
+          "kind": "image",
+          "compression": "lossless",
+          "embedIcc": true
+        },
+        "variantKey": "square"
+      },
+      {
+        "rootId": "deliveries",
+        "relativeDirectory": "examples",
+        "basename": "product_portrait.png",
+        "format": "png",
+        "collision": {
+          "onConflict": "version",
+          "preserveSource": true
+        },
+        "width": 1600,
+        "height": 2000,
+        "color": {
+          "iccProfile": "sRGB IEC61966-2.1",
+          "bitDepth": 8,
+          "range": "full",
+          "alpha": "straight"
+        },
+        "outputKey": "product_portrait_png",
+        "encoding": {
+          "kind": "image",
+          "compression": "lossless",
+          "embedIcc": true
+        },
+        "variantKey": "portrait"
+      },
+      {
+        "rootId": "deliveries",
+        "relativeDirectory": "examples",
+        "basename": "product_wide.png",
+        "format": "png",
+        "collision": {
+          "onConflict": "version",
+          "preserveSource": true
+        },
+        "width": 1920,
+        "height": 1080,
+        "color": {
+          "iccProfile": "sRGB IEC61966-2.1",
+          "bitDepth": 8,
+          "range": "full",
+          "alpha": "straight"
+        },
+        "outputKey": "product_wide_png",
+        "encoding": {
+          "kind": "image",
+          "compression": "lossless",
+          "embedIcc": true
+        },
+        "variantKey": "wide"
+      }
+    ],
+    "preserveNativeEditing": true,
+    "allowedFallbacks": [
+      "native_equivalent"
+    ],
+    "verifyMode": "metadata_and_changed_regions"
+  },
+  "resources": {
+    "maxHostMutations": 1,
+    "maxWorkerJobs": 2,
+    "maxCpuThreads": 4,
+    "maxTemporaryBytes": "21474836480",
+    "maxRemoteBytes": "0",
+    "maxPaidCredits": 0,
+    "remoteTransferAllowed": false
+  },
+  "review": {
+    "enabled": true,
+    "requirements": [
+      {
+        "id": "product_whole",
+        "description": "상품 잘림 없음",
+        "importance": "required",
+        "evaluator": "both",
+        "assertionIds": [
+          "product.bounds_inside_canvas"
+        ],
+        "evidenceKeys": [
+          "product.variants.contact_sheet",
+          "product.mask.roi"
+        ],
+        "passRule": {
+          "allAssertionsPass": true,
+          "minConfidence": 0.75
+        }
+      },
+      {
+        "id": "brand_binding",
+        "description": "로고와 문구가 지정 역할에 배치됨",
+        "importance": "required",
+        "evaluator": "assertion",
+        "assertionIds": [
+          "roles.asset_bindings",
+          "text.exact_content",
+          "text.no_overflow"
+        ],
+        "evidenceKeys": [],
+        "passRule": {
+          "allAssertionsPass": true
+        }
+      },
+      {
+        "id": "output_dimensions",
+        "description": "출력 크기 일치",
+        "importance": "required",
+        "evaluator": "assertion",
+        "assertionIds": [
+          "outputs.image_dimensions"
+        ],
+        "evidenceKeys": [],
+        "passRule": {
+          "allAssertionsPass": true
+        }
+      },
+      {
+        "id": "native_layers",
+        "description": "PSD 레이어 유지",
+        "importance": "required",
+        "evaluator": "assertion",
+        "assertionIds": [
+          "native.layer_structure"
+        ],
+        "evidenceKeys": [],
+        "passRule": {
+          "allAssertionsPass": true
+        }
+      },
+      {
+        "id": "template_layout",
+        "description": "템플릿의 여백과 시각 계층 유지",
+        "importance": "preference",
+        "evaluator": "semantic",
+        "assertionIds": [],
+        "evidenceKeys": [
+          "template.before",
+          "product.variants.contact_sheet"
+        ],
+        "passRule": {
+          "allAssertionsPass": true,
+          "minConfidence": 0.75
+        }
+      }
+    ],
+    "maxRepairs": 2,
+    "maxReviewSeconds": 120
+  },
+  "controller": {
+    "mode": "configured_provider",
+    "providerId": "local-vision-gemma3-4b",
+    "waitDeadline": "2026-11-16T00:00:00Z",
+    "modelBudget": {
+      "maxRequests": 12,
+      "maxInputTokens": 96000,
+      "maxOutputTokens": 12000,
+      "maxImagePixels": "48000000",
+      "maxElapsedSeconds": 600,
+      "maxCostMinor": "0",
+      "currency": "USD",
+      "enforcement": "server_enforced"
+    }
+  }
+}

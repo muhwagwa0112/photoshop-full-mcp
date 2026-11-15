@@ -28,7 +28,7 @@ export function failureEnvelope(commandId: string, requestId: string, error: unk
     ok: false,
     requestId,
     commandId,
-    status: known && error.code === "CANCELLED" ? "cancelled" : "failed",
+    status: known && error.code === "OUTCOME_UNKNOWN" ? "outcome_unknown" : known && error.code === "CANCELLED" ? "cancelled" : "failed",
     summary: known ? error.message : "Photoshop command failed",
     warnings: [],
     error: {

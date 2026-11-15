@@ -19,12 +19,12 @@ function Invoke-PsMcpCommand {
 
 function Assert-PsMcpNode20 {
     $nodeCommand = Get-Command node -ErrorAction SilentlyContinue
-    if (-not $nodeCommand) { throw 'Node.js 20 or newer is required and was not found on PATH.' }
+    if (-not $nodeCommand) { throw 'Node.js 20.19 or newer is required and was not found on PATH.' }
     $rawVersion = (& node --version 2>$null)
-    if ($LASTEXITCODE -ne 0 -or -not $rawVersion -or $rawVersion -notmatch '^v(?<major>\d+)\.') {
+    if ($LASTEXITCODE -ne 0 -or -not $rawVersion -or $rawVersion -notmatch '^v(?<major>\d+)\.(?<minor>\d+)\.') {
         throw 'Could not determine the installed Node.js version.'
     }
-    if ([int]$Matches.major -lt 20) { throw "Node.js 20 or newer is required; found $rawVersion." }
+    if ([int]$Matches.major -lt 20 -or ([int]$Matches.major -eq 20 -and [int]$Matches.minor -lt 19)) { throw "Node.js 20.19 or newer is required; found $rawVersion." }
     return $rawVersion
 }
 

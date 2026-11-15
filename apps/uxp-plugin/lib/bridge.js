@@ -2,12 +2,13 @@
 
 const { getToken, setToken, getServer, setServer, getPluginInstanceId } = require("./storage");
 const { normalizeError, PluginError } = require("./errors");
+const operations = require("./operations");
 
 const FIRST_PORT = 38452;
 const LAST_PORT = 38462;
-const PROTOCOL = "ps-mcp-bridge/3";
+const PROTOCOL = "ps-mcp-bridge/4";
 const POLL_TIMEOUT_MS = 25_000;
-const SUPPORTED_KINDS = new Set(["host.describe", "state.get", "preview.get", "command.execute", "advanced.batchplay", "approval.request", "job.resume", "job.cancel"]);
+const SUPPORTED_KINDS = new Set(["host.describe", "state.get", "preview.get", "command.execute", "advanced.batchplay", "approval.request", "job.resume", "job.cancel", "target.capture", "target.inspect", "automation.capabilities", "automation.execute", "operation.cancel", "operation.receipt", "operation.verify"]);
 
 // UXP 9.3 discards IP-literal manifest origins. The Node bridge still binds
 // exclusively to 127.0.0.1; localhost is only the permission-compatible client name.
@@ -38,13 +39,15 @@ function randomChallenge() {
   return base64url(bytes);
 }
 
-async function discoveryProof(token, protocol, serverId, port, secretGeneration, challenge) {
+async function discoveryProof(token, protocol, serverId, port, secretGeneration, challenge, ownerGeneration, executionProtocol) {
   if (!crypto.subtle || typeof crypto.subtle.importKey !== "function") {
     throw new Error("This UXP runtime cannot authenticate the local bridge; update Photoshop before reconnecting");
   }
   const encoder = new TextEncoder();
   const key = await crypto.subtle.importKey("raw", encoder.encode(token), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
-  const payload = [protocol, serverId, String(port), String(secretGeneration), challenge].join("\n");
+  const fields = [protocol, serverId, String(port), String(secretGeneration), challenge];
+  if (protocol === PROTOCOL) fields.push(ownerGeneration, executionProtocol);
+  const payload = fields.join("\n");
   return base64url(new Uint8Array(await crypto.subtle.sign("HMAC", key, encoder.encode(payload))));
 }
 
@@ -54,13 +57,13 @@ async function probe(port, token) {
   const response = await fetchWithTimeout(`${baseUrl(port)}/v1/discovery${suffix}`, { method: "GET" });
   if (!response.ok) return null;
   const data = await readJson(response);
-  if (!data || data.protocol !== PROTOCOL || data.port !== port || !data.serverId) return null;
+  if (!data || ![PROTOCOL, "ps-mcp-bridge/3"].includes(data.protocol) || data.port !== port || !data.serverId) return null;
   if (token) {
     if (!Number.isInteger(data.secretGeneration) || typeof data.proof !== "string") return null;
-    const expected = await discoveryProof(token, data.protocol, data.serverId, data.port, data.secretGeneration, challenge);
+    const expected = await discoveryProof(token, data.protocol, data.serverId, data.port, data.secretGeneration, challenge, data.ownerGeneration, data.executionProtocol);
     if (expected.length !== data.proof.length || expected !== data.proof) return null;
   }
-  return data;
+  return { ...data, legacy: data.protocol !== PROTOCOL || data.executionProtocol !== operations.EXECUTION_PROTOCOL || !/^[A-Za-z0-9_.:-]{8,200}$/.test(data.ownerGeneration || "") };
 }
 
 async function discover() {
@@ -76,6 +79,7 @@ async function discover() {
 
 async function discoverAll(existingToken) {
   const { servers } = await discoverAllDetailed(existingToken);
+  if (servers.some(server => server.legacy)) throw new PluginError("CAPABILITY_UNAVAILABLE", "An authenticated legacy bridge is still running. Stop the obsolete standalone bridge and update the runtime before native editing can resume.");
   return servers;
 }
 
@@ -106,6 +110,7 @@ async function pair(codeValue) {
   const code = match[2];
   const server = await probe(port, null);
   if (!server) throw new PluginError("HOST_ERROR", "The selected bridge is unavailable");
+  if (server.legacy) throw new PluginError("CAPABILITY_UNAVAILABLE", "The selected bridge uses an obsolete execution protocol; update and stop it before pairing");
   const response = await fetchWithTimeout(`${baseUrl(server.port)}/v1/pair`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -132,6 +137,7 @@ class BridgeClient {
     this.executionTail = Promise.resolve();
     this.workers = new Map();
     this.generation = 0;
+    this.deliveries = new Map();
   }
 
   async start() {
@@ -167,14 +173,19 @@ class BridgeClient {
           await this.delay(1500);
           continue;
         }
-        this.servers = await discoverAll(token);
-        this.server = this.servers[0] || null;
+        if (!this.server || !this.workers.size) {
+          const discovered = await discoverAll(token);
+          if (discovered.length > 1) throw new Error("More than one authenticated runtime owner is listening; stop obsolete bridge processes");
+          this.servers = discovered;
+          this.server = this.servers[0] || null;
+        }
         if (!this.server) throw new Error("Paired bridge is not available");
         setServer({ serverId: this.server.serverId, port: this.server.port, protocol: PROTOCOL });
         const ports = this.servers.map((server) => server.port).join(", ");
         this.onStatus("online", `${this.server.serverId} · ${this.servers.length}개 브리지 (${ports})`);
         this.syncWorkers(token);
-        await this.delay(1500);
+        await this.retryDeliveries(token);
+        await this.delay(1000);
       } catch (error) {
         this.onStatus("connecting", error.message || String(error));
         this.server = null;
@@ -186,81 +197,89 @@ class BridgeClient {
 
   syncWorkers(token) {
     for (const server of this.servers) {
-      if (this.workers.has(server.port)) continue;
-      const generation = this.generation;
-      const worker = {};
-      worker.promise = this.pollWorker(server, token, generation).finally(() => {
-        if (this.workers.get(server.port) === worker) this.workers.delete(server.port);
-      });
-      this.workers.set(server.port, worker);
+      for (const control of [false, true]) {
+        const key = `${server.port}:${control ? "control" : "commands"}`;
+        if (this.workers.has(key)) continue;
+        const generation = this.generation;
+        const worker = {};
+        worker.promise = this.pollWorker(server, token, generation, control).finally(() => {
+          if (this.workers.get(key) === worker) this.workers.delete(key);
+        });
+        this.workers.set(key, worker);
+      }
     }
   }
 
-  async pollWorker(server, token, generation) {
+  async pollWorker(server, token, generation, control) {
     while (this.running && generation === this.generation && this.servers.some((item) => item.port === server.port)) {
-      try {
-        await this.pollOnce(server, token, generation);
-      } catch (error) {
+      try { await this.pollOnce(server, token, generation, control); }
+      catch (error) {
         this.onStatus("connecting", `localhost:${server.port} · ${error.message || String(error)}`);
         return;
       }
     }
   }
 
-  async pollOnce(server, token, generation = this.generation) {
-    const headers = {
-      Authorization: `Bearer ${token}`,
-      "X-Plugin-Instance": getPluginInstanceId()
-    };
-    const response = await fetchWithTimeout(`${baseUrl(server.port)}/v1/poll`, { method: "GET", headers }, POLL_TIMEOUT_MS);
+  async pollOnce(server, token, generation = this.generation, control = false) {
+    const headers = { Authorization: `Bearer ${token}`, "X-Plugin-Instance": getPluginInstanceId(), "X-Host-Epoch": operations.hostEpoch };
+    const response = await fetchWithTimeout(`${baseUrl(server.port)}/v1/${control ? "control" : "poll"}`, { method: "GET", headers }, POLL_TIMEOUT_MS);
     if (!this.running || generation !== this.generation) return;
-    if (response.status === 204) return;
-    if (response.status === 401 || response.status === 403) throw new Error("Bridge authentication was rejected; unpair and pair again");
+    if (response.status === 204) { await this.delay(150); return; }
+    if (response.status === 401 || response.status === 403) throw new Error("Bridge authentication was rejected; reconnect the paired owner");
     if (!response.ok) throw new Error(`Poll failed (${response.status})`);
     const request = await readJson(response);
-    this.validateRequest(request);
-    const requestIdentity = `${server.port}|${request.requestId}`;
-    const nonceIdentity = `${server.port}|${request.nonce}`;
-    const priorNonce = this.requestNonces.get(requestIdentity);
-    const priorRequest = this.nonceRequests.get(nonceIdentity);
-    if ((priorNonce && priorNonce !== request.nonce) || (priorRequest && priorRequest !== request.requestId)) {
-      throw new Error("Bridge request replay identity mismatch");
+    this.validateRequest(request, server);
+    if (control) {
+      let data;
+      if (request.kind === "operation.cancel") data = operations.requestCancel(request.payload.operationId);
+      else if (request.kind === "operation.receipt") data = operations.operationReceipt(request.payload.operationId, request.payload.requestDigest);
+      else throw new PluginError("PRECONDITION_FAILED", "Control channel cannot execute native mutations");
+      await this.postResult(server, token, request, { ok: true, data, effect: "not_applied", hostEpoch: operations.hostEpoch, operationId: request.operationId });
+      return;
     }
-    this.requestNonces.set(requestIdentity, request.nonce);
-    this.nonceRequests.set(nonceIdentity, request.requestId);
-    const replayKey = `${server.port}|${request.requestId}|${request.nonce}`;
-    let result = this.seen.get(replayKey);
-    if (!result) {
-      if (this.deadlineMs(request.deadline) <= Date.now()) {
-        result = { ok: false, error: { code: "TIMEOUT", message: "Request deadline elapsed before execution" } };
-      } else {
-        try {
-          const data = await this.enqueueDispatch(request.kind, request.payload || {}, server, token, request, this.deadlineMs(request.deadline));
-          result = { ok: true, data };
-        } catch (error) {
-          result = { ok: false, error: normalizeError(error) };
-        }
-      }
-      this.remember(replayKey, result);
-    }
-    await this.postResult(server, token, request, result);
+    // The receive loop stays available while a native operation is awaiting an
+    // Adobe call. Ordering comes from the Node owner; this tail only serializes
+    // that order inside one UXP executor.
+    const task = this.enqueueDispatch(request, server, token);
+    task.then((result) => {
+      const key = request.operationId || request.requestId;
+      this.deliveries.set(key, { server, request, result });
+      return this.deliverReceipt(key, token);
+    }).catch((error) => {
+      this.onStatus("connecting", error.message || String(error));
+    });
   }
 
-  enqueueDispatch(kind, payload, server, token, request, deadlineMs) {
-    const execute = () => {
-      if (!Number.isFinite(deadlineMs) || deadlineMs <= Date.now()) {
-        throw new PluginError("TIMEOUT", "Request deadline elapsed while waiting in the Photoshop execution queue");
-      }
-      return this.dispatch(kind, payload, {
-        serverPort: server.port,
-        serverId: server.serverId,
-        uploadExport: (binary, metadata) => this.uploadExport(server, token, request, binary, metadata),
-        downloadImport: (fileName) => this.downloadImport(server, token, request, fileName)
-      });
-    };
-    const queued = this.executionTail.catch(() => {}).then(execute);
-    this.executionTail = queued.catch(() => {});
-    return queued;
+  enqueueDispatch(request, server, token) {
+    const execute = () => { this.validateRequest(request, server); return operations.executeOperation(request, (operationContext) => this.dispatch(request.kind, request.payload || {}, {
+      ...operationContext,
+      get cancelRequested() { return operationContext.cancelRequested; },
+      serverPort: server.port, serverId: server.serverId,
+      uploadExport: (binary, metadata) => this.uploadExport(server, token, request, binary, metadata),
+      downloadImport: (fileName, assetKey) => this.downloadImport(server, token, request, fileName, assetKey)
+    })); };
+    const task = this.executionTail.then(execute, execute).catch((error) => ({
+      requestId: request.requestId, nonce: request.nonce, operationId: request.operationId,
+      hostEpoch: operations.hostEpoch, ok: false, effect: error.details && error.details.effect || "not_applied", error: normalizeError(error)
+    }));
+    this.executionTail = task.then(() => undefined);
+    return task;
+  }
+
+  async deliverReceipt(key, token) {
+    const delivery = this.deliveries.get(key);
+    if (!delivery) return;
+    try {
+      await this.postResult(delivery.server, token, delivery.request, delivery.result);
+      operations.acknowledge(key);
+      this.deliveries.delete(key);
+    } catch (error) {
+      this.onStatus("connecting", `Receipt retained for retry: ${error.message || error}`);
+    }
+  }
+
+  async retryDeliveries(token) {
+    for (const key of this.deliveries.keys()) await this.deliverReceipt(key, token);
   }
 
   async uploadExport(server, token, request, binary, metadata = {}) {
@@ -277,7 +296,7 @@ class BridgeClient {
         "X-Plugin-Instance": getPluginInstanceId(),
         "X-Request-Id": request.requestId,
         "X-Request-Nonce": request.nonce,
-        "X-Overwrite-Approved": metadata.overwriteApproved === true ? "true" : "false",
+        "X-On-Conflict": metadata.onConflict || "error",
         "Content-Type": "application/octet-stream"
       },
       body: binary
@@ -290,7 +309,7 @@ class BridgeClient {
     return data.result || {};
   }
 
-  async downloadImport(server, token, request, fileName) {
+  async downloadImport(server, token, request, fileName, assetKey) {
     if (!token || !request || typeof request.requestId !== "string" || typeof request.nonce !== "string") {
       throw new PluginError("HOST_ERROR", "Import download is not bound to an authenticated bridge request");
     }
@@ -298,7 +317,7 @@ class BridgeClient {
     if (!name || name.length > 255 || /[\\/:*?"<>|\x00-\x1f]/.test(name)) {
       throw new PluginError("PRECONDITION_FAILED", "Invalid default import file name");
     }
-    const query = `request_id=${encodeURIComponent(request.requestId)}&nonce=${encodeURIComponent(request.nonce)}&file_name=${encodeURIComponent(name)}`;
+    const query = `request_id=${encodeURIComponent(request.requestId)}&nonce=${encodeURIComponent(request.nonce)}&file_name=${encodeURIComponent(name)}${assetKey ? `&asset_key=${encodeURIComponent(assetKey)}` : ""}`;
     const response = await fetchWithTimeout(`${baseUrl(server.port)}/v1/import?${query}`, {
       method: "GET",
       headers: {
@@ -316,12 +335,14 @@ class BridgeClient {
     return binary;
   }
 
-  validateRequest(request) {
+  validateRequest(request, server) {
     if (!request || typeof request.requestId !== "string" || typeof request.nonce !== "string" || !(typeof request.deadline === "string" || typeof request.deadline === "number") || typeof request.kind !== "string") {
       throw new Error("Bridge request is missing requestId, nonce, deadline, or kind");
     }
     if (!Number.isFinite(this.deadlineMs(request.deadline))) throw new Error("Bridge request deadline is invalid");
     if (!SUPPORTED_KINDS.has(request.kind)) throw new Error(`Bridge request kind is not allowlisted: ${request.kind}`);
+    if (!server || server.protocol !== PROTOCOL || server.legacy) throw new PluginError("CAPABILITY_UNAVAILABLE", "Native requests require the authenticated current runtime owner; legacy bridge execution is disabled");
+    operations.validateExecutionRequest(request, server);
   }
 
   deadlineMs(value) {
@@ -353,7 +374,7 @@ class BridgeClient {
         "X-Plugin-Instance": getPluginInstanceId(),
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ requestId: request.requestId, nonce: request.nonce, ...result })
+      body: JSON.stringify({ requestId: request.requestId, nonce: request.nonce, operationId: request.operationId, hostEpoch: operations.hostEpoch, ...result })
     }, 5000);
     if (!response.ok) throw new Error(`Result delivery failed (${response.status})`);
   }

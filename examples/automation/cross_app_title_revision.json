@@ -1,0 +1,251 @@
+{
+  "contractVersion": "1.0",
+  "requestId": "6395f02c-c19a-58e3-bd02-0220852ef0e9",
+  "workflowHome": {
+    "app": "premiere",
+    "installationId": "example-premiere-install",
+    "namespaceId": "7f9b8642-0f63-502f-861d-4e7b8705a11a"
+  },
+  "recipeId": "cross.ps_title_to_premiere.v1",
+  "brief": "PSD 텍스트와 로고를 수정하고 Premiere의 지정 타이틀 역할에 반영한 새 리비전을 만든다.",
+  "inputs": {
+    "titleMaster": {
+      "rootId": "source",
+      "relativePath": "titles/main_title.psd"
+    },
+    "project": {
+      "rootId": "source",
+      "relativePath": "projects/program.prproj"
+    }
+  },
+  "parameters": {
+    "textByRole": {
+      "main_title": "새로운 제목",
+      "subtitle": "부제 예시"
+    },
+    "targetSequenceRole": "delivery_sequence",
+    "timelinePlacement": {
+      "startFrame": "150",
+      "durationFrames": "120",
+      "frameRate": {
+        "num": 30,
+        "den": 1
+      }
+    },
+    "overlayAlpha": "straight",
+    "preserveAnimation": true,
+    "missingRolePolicy": "error",
+    "roleManifest": "auto",
+    "targetClipRole": "title_overlay"
+  },
+  "delivery": {
+    "outputs": [
+      {
+        "rootId": "deliveries",
+        "relativeDirectory": "examples",
+        "basename": "main_title_rev.psd",
+        "format": "psd",
+        "collision": {
+          "onConflict": "version",
+          "preserveSource": true
+        },
+        "outputKey": "main_title_rev_psd",
+        "encoding": {
+          "kind": "native_project",
+          "preserveLayersOrTimeline": true
+        }
+      },
+      {
+        "rootId": "deliveries",
+        "relativeDirectory": "examples",
+        "basename": "main_title_overlay.png",
+        "format": "png",
+        "collision": {
+          "onConflict": "version",
+          "preserveSource": true
+        },
+        "width": 1920,
+        "height": 1080,
+        "color": {
+          "iccProfile": "sRGB IEC61966-2.1",
+          "bitDepth": 8,
+          "range": "full",
+          "alpha": "straight"
+        },
+        "outputKey": "main_title_overlay_png",
+        "encoding": {
+          "kind": "image",
+          "compression": "lossless",
+          "embedIcc": true
+        }
+      },
+      {
+        "rootId": "deliveries",
+        "relativeDirectory": "examples",
+        "basename": "program_rev.prproj",
+        "format": "prproj",
+        "collision": {
+          "onConflict": "version",
+          "preserveSource": true
+        },
+        "outputKey": "program_rev_prproj",
+        "encoding": {
+          "kind": "native_project",
+          "preserveLayersOrTimeline": true
+        }
+      },
+      {
+        "rootId": "deliveries",
+        "relativeDirectory": "examples",
+        "basename": "program_rev.mp4",
+        "format": "mp4",
+        "collision": {
+          "onConflict": "version",
+          "preserveSource": true
+        },
+        "width": 1920,
+        "height": 1080,
+        "outputKey": "program_rev_mp4",
+        "frameRate": {
+          "num": 30,
+          "den": 1
+        },
+        "pixelAspect": {
+          "num": 1,
+          "den": 1
+        },
+        "range": {
+          "kind": "whole_sequence"
+        },
+        "color": {
+          "primaries": "bt709",
+          "transfer": "bt709",
+          "matrix": "bt709",
+          "bitDepth": 8,
+          "range": "limited",
+          "alpha": "none"
+        },
+        "audio": {
+          "sampleRate": 48000,
+          "channels": 2,
+          "channelLayout": "stereo"
+        },
+        "encoding": {
+          "kind": "video",
+          "encoderPresetId": "h264-hd1080-30-sdr-aac48-stereo.v1",
+          "videoCodec": "h264",
+          "pixelFormat": "yuv420p",
+          "fieldOrder": "progressive",
+          "audioCodec": "aac",
+          "rateControl": "preset",
+          "allowPresetOverrides": false
+        }
+      }
+    ],
+    "preserveNativeEditing": true,
+    "allowedFallbacks": [
+      "native_equivalent"
+    ],
+    "verifyMode": "metadata_and_changed_regions"
+  },
+  "resources": {
+    "maxHostMutations": 1,
+    "maxWorkerJobs": 2,
+    "maxCpuThreads": 4,
+    "maxTemporaryBytes": "21474836480",
+    "maxRemoteBytes": "0",
+    "maxPaidCredits": 0,
+    "remoteTransferAllowed": false
+  },
+  "review": {
+    "enabled": true,
+    "requirements": [
+      {
+        "id": "exact_text",
+        "description": "지정 텍스트 일치",
+        "importance": "required",
+        "evaluator": "assertion",
+        "assertionIds": [
+          "text.exact_content"
+        ],
+        "evidenceKeys": [],
+        "passRule": {
+          "allAssertionsPass": true
+        }
+      },
+      {
+        "id": "placement",
+        "description": "타이틀 시작과 길이 일치",
+        "importance": "required",
+        "evaluator": "assertion",
+        "assertionIds": [
+          "title.timeline_range"
+        ],
+        "evidenceKeys": [],
+        "passRule": {
+          "allAssertionsPass": true
+        }
+      },
+      {
+        "id": "alpha",
+        "description": "알파 보존",
+        "importance": "required",
+        "evaluator": "assertion",
+        "assertionIds": [
+          "overlay.alpha"
+        ],
+        "evidenceKeys": [],
+        "passRule": {
+          "allAssertionsPass": true
+        }
+      },
+      {
+        "id": "preserve_motion",
+        "description": "기존 모션과 다른 클립 변경 없음",
+        "importance": "required",
+        "evaluator": "assertion",
+        "assertionIds": [
+          "title.motion_unchanged",
+          "timeline.protected_state"
+        ],
+        "evidenceKeys": [],
+        "passRule": {
+          "allAssertionsPass": true
+        }
+      },
+      {
+        "id": "visual_hierarchy",
+        "description": "원래 타이틀의 시각 계층 유지",
+        "importance": "preference",
+        "evaluator": "semantic",
+        "assertionIds": [],
+        "evidenceKeys": [
+          "title.before",
+          "title.after",
+          "title.sequence_frame"
+        ],
+        "passRule": {
+          "allAssertionsPass": true,
+          "minConfidence": 0.75
+        }
+      }
+    ],
+    "maxRepairs": 2,
+    "maxReviewSeconds": 120
+  },
+  "controller": {
+    "mode": "configured_provider",
+    "providerId": "local-vision-gemma3-4b",
+    "waitDeadline": "2026-11-16T00:00:00Z",
+    "modelBudget": {
+      "maxRequests": 12,
+      "maxInputTokens": 96000,
+      "maxOutputTokens": 12000,
+      "maxImagePixels": "48000000",
+      "maxElapsedSeconds": 600,
+      "maxCostMinor": "0",
+      "currency": "USD",
+      "enforcement": "server_enforced"
+    }
+  }
+}

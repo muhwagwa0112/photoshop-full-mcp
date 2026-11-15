@@ -16,7 +16,7 @@ Photoshop Full MCP v2 is a local, capability-gated MCP server for Photoshop. It 
 
 ## Quick Start for Windows
 
-Prerequisites: Windows 10/11, Photoshop 24 or later, [Node.js 20 or later](https://nodejs.org/), and Codex Desktop or the Codex CLI. Photoshop 2026 (27.9) is the reference host.
+Prerequisites: Windows 10/11, Photoshop 24 or later, [Node.js 20.19 or later](https://nodejs.org/), and Codex Desktop or the Codex CLI. Photoshop 2026 (27.9) is the reference host.
 
 1. Download `photoshop-full-mcp-v2.0.1-windows.zip` from the [latest release](https://github.com/muhwagwa0112/photoshop-full-mcp/releases/latest), then extract it. The adjacent signed manifest and signature authenticate future in-app updates; the `.sha256` file is an optional corruption check.
 2. Open PowerShell in the extracted `photoshop-full-mcp-2.0.1` folder and run:
@@ -87,6 +87,12 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "$env:LOCALAPPDATA\PS_MCP\ap
 # Also remove pairing state and exports
 powershell -NoProfile -ExecutionPolicy Bypass -File "$env:LOCALAPPDATA\PS_MCP\app\tools\Uninstall.ps1" -RemoveUserData
 ```
+
+## Automated editing workflows
+
+The stdio frontend now connects to a persistent authenticated runtime owner. Accepted jobs survive frontend disconnects; request identities, native operation receipts, cancellation, exact document/layer targets, checkpoint-aware revisions and output publication belong to that owner. See [Automated workflows](docs/AUTOMATION.md) for the recipe contracts, installation configuration, controller review/repair and cross-application use, and [Local workers](workers/README.md) for optional FFmpeg, ASR, SAM2 and OpenCV setup. Node 20.19 or later is required. Source implementation does not mark an Adobe/model profile as live-qualified.
+
+Automatic command approval does not imply permission to overwrite files. Exports use an explicit collision policy, and overwriting an existing output requires its expected SHA-256. Source assets remain separate from owned working copies and deliverables.
 
 ## Safe usage sequence
 

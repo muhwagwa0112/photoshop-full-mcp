@@ -1,0 +1,278 @@
+{
+  "contractVersion": "1.0",
+  "requestId": "7e7fbe85-c1c0-51a9-ac73-e8061e2526e3",
+  "workflowHome": {
+    "app": "premiere",
+    "installationId": "example-premiere-install",
+    "namespaceId": "7f9b8642-0f63-502f-861d-4e7b8705a11a"
+  },
+  "recipeId": "pr.interview_captioned.v1",
+  "brief": "발화 내용을 보존하면서 지정 구간을 편집하고 B-roll, 음악 덕킹, 한국어 자막을 넣는다.",
+  "inputs": {
+    "camera": {
+      "rootId": "source",
+      "relativePath": "interview/cam_a.mp4"
+    },
+    "voice": {
+      "rootId": "source",
+      "relativePath": "interview/recorder.wav"
+    },
+    "music": {
+      "rootId": "source",
+      "relativePath": "music/approved_track.wav"
+    },
+    "broll": {
+      "rootId": "source",
+      "relativePath": "broll/product.mp4"
+    }
+  },
+  "parameters": {
+    "sequenceRate": {
+      "num": 30000,
+      "den": 1001
+    },
+    "language": "ko",
+    "editIntent": {
+      "preserveSpeechMeaning": true,
+      "silenceCuts": {
+        "enabled": true,
+        "minimumSilenceMs": 800,
+        "keepHeadMs": 160,
+        "keepTailMs": 180
+      }
+    },
+    "captions": {
+      "maxLines": 2,
+      "source": "local_asr",
+      "nativeEditable": true,
+      "alsoExportSrt": true
+    },
+    "ducking": {
+      "musicGainDb": -10,
+      "speechDuckDb": -8,
+      "attackMs": 120,
+      "releaseMs": 450
+    },
+    "audioTargetIsExamplePreset": true,
+    "sync": {
+      "primary": "waveform",
+      "fallback": "none",
+      "referenceInput": "voice",
+      "maxResidualOffsetMs": 20,
+      "origin": "common_overlap_start"
+    },
+    "brollPlan": [
+      {
+        "inputKey": "broll",
+        "sourceInTicks": "0",
+        "fromFrame": "30",
+        "toFrame": "120",
+        "preserveSpeechAudio": true
+      }
+    ]
+  },
+  "delivery": {
+    "outputs": [
+      {
+        "rootId": "deliveries",
+        "relativeDirectory": "examples",
+        "basename": "interview_project.prproj",
+        "format": "prproj",
+        "collision": {
+          "onConflict": "version",
+          "preserveSource": true
+        },
+        "outputKey": "interview_project_prproj",
+        "encoding": {
+          "kind": "native_project",
+          "preserveLayersOrTimeline": true
+        }
+      },
+      {
+        "rootId": "deliveries",
+        "relativeDirectory": "examples",
+        "basename": "interview_master.mp4",
+        "format": "mp4",
+        "collision": {
+          "onConflict": "version",
+          "preserveSource": true
+        },
+        "width": 1920,
+        "height": 1080,
+        "color": {
+          "primaries": "bt709",
+          "transfer": "bt709",
+          "matrix": "bt709",
+          "bitDepth": 8,
+          "range": "limited",
+          "alpha": "none"
+        },
+        "frameRate": {
+          "num": 30000,
+          "den": 1001
+        },
+        "audio": {
+          "sampleRate": 48000,
+          "channels": 2,
+          "integratedLufs": -16,
+          "maxTruePeakDbtp": -1,
+          "channelLayout": "stereo"
+        },
+        "outputKey": "interview_master_mp4",
+        "pixelAspect": {
+          "num": 1,
+          "den": 1
+        },
+        "range": {
+          "kind": "whole_sequence"
+        },
+        "encoding": {
+          "kind": "video",
+          "encoderPresetId": "h264-hd1080-2997-sdr-aac48-stereo.v1",
+          "videoCodec": "h264",
+          "pixelFormat": "yuv420p",
+          "fieldOrder": "progressive",
+          "audioCodec": "aac",
+          "rateControl": "preset",
+          "allowPresetOverrides": false
+        }
+      },
+      {
+        "rootId": "deliveries",
+        "relativeDirectory": "examples",
+        "basename": "interview.ko.srt",
+        "format": "srt",
+        "collision": {
+          "onConflict": "version",
+          "preserveSource": true
+        },
+        "outputKey": "interview_ko_srt",
+        "encoding": {
+          "kind": "subtitle",
+          "charset": "utf-8",
+          "lineEnding": "LF"
+        }
+      }
+    ],
+    "preserveNativeEditing": true,
+    "allowedFallbacks": [
+      "native_equivalent"
+    ],
+    "verifyMode": "metadata_and_changed_regions"
+  },
+  "resources": {
+    "maxHostMutations": 1,
+    "maxWorkerJobs": 2,
+    "maxCpuThreads": 4,
+    "maxTemporaryBytes": "21474836480",
+    "maxRemoteBytes": "0",
+    "maxPaidCredits": 0,
+    "remoteTransferAllowed": false
+  },
+  "review": {
+    "enabled": true,
+    "requirements": [
+      {
+        "id": "speech_boundaries",
+        "description": "관측된 단어 경계 중간 절단 없음; 불확실 구간은 유지",
+        "importance": "required",
+        "evaluator": "assertion",
+        "assertionIds": [
+          "cut_map.word_boundaries"
+        ],
+        "evidenceKeys": [],
+        "passRule": {
+          "allAssertionsPass": true
+        }
+      },
+      {
+        "id": "av_sync",
+        "description": "A/V 동기 유지",
+        "importance": "required",
+        "evaluator": "assertion",
+        "assertionIds": [
+          "sync.residual_offset"
+        ],
+        "evidenceKeys": [],
+        "passRule": {
+          "allAssertionsPass": true
+        }
+      },
+      {
+        "id": "caption_clock",
+        "description": "자막은 최종 타임라인 시간 사용",
+        "importance": "required",
+        "evaluator": "assertion",
+        "assertionIds": [
+          "captions.cut_map_alignment"
+        ],
+        "evidenceKeys": [],
+        "passRule": {
+          "allAssertionsPass": true
+        }
+      },
+      {
+        "id": "native_and_srt",
+        "description": "편집 가능한 프로젝트와 SRT 제공",
+        "importance": "required",
+        "evaluator": "assertion",
+        "assertionIds": [
+          "native.timeline_structure",
+          "outputs.native_project",
+          "outputs.srt"
+        ],
+        "evidenceKeys": [],
+        "passRule": {
+          "allAssertionsPass": true
+        }
+      },
+      {
+        "id": "dialogue_mix",
+        "description": "지정 음량·덕킹과 peak 조건 충족",
+        "importance": "required",
+        "evaluator": "assertion",
+        "assertionIds": [
+          "audio.duck_envelope",
+          "audio.final_loudness",
+          "audio.true_peak"
+        ],
+        "evidenceKeys": [],
+        "passRule": {
+          "allAssertionsPass": true
+        }
+      },
+      {
+        "id": "broll_relevance",
+        "description": "B-roll과 발화 내용 일치",
+        "importance": "preference",
+        "evaluator": "semantic",
+        "assertionIds": [],
+        "evidenceKeys": [
+          "interview.broll.frames",
+          "interview.transcript"
+        ],
+        "passRule": {
+          "allAssertionsPass": true,
+          "minConfidence": 0.75
+        }
+      }
+    ],
+    "maxRepairs": 2,
+    "maxReviewSeconds": 120
+  },
+  "controller": {
+    "mode": "configured_provider",
+    "providerId": "local-vision-gemma3-4b",
+    "waitDeadline": "2026-11-16T00:00:00Z",
+    "modelBudget": {
+      "maxRequests": 12,
+      "maxInputTokens": 96000,
+      "maxOutputTokens": 12000,
+      "maxImagePixels": "48000000",
+      "maxElapsedSeconds": 600,
+      "maxCostMinor": "0",
+      "currency": "USD",
+      "enforcement": "server_enforced"
+    }
+  }
+}

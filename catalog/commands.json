@@ -61,7 +61,7 @@
     "risk": "external",
     "approval": "none",
     "prerequisites": ["document"],
-    "inputSchema": { "type": "object", "additionalProperties": false, "required": ["format"], "properties": { "format": { "type": "string", "enum": ["png", "jpg", "jpeg", "psd"] }, "file_name": { "type": "string", "minLength": 1, "maxLength": 255, "pattern": "^[^\\\\/:*?\"<>|]+$" }, "quality": { "type": "integer", "minimum": 0, "maximum": 12 } } },
+    "inputSchema": {"type": "object", "additionalProperties": false, "required": ["format"], "properties": {"format": {"type": "string", "enum": ["png", "jpg", "jpeg", "psd", "psb"]}, "file_name": {"type": "string", "minLength": 1, "maxLength": 255, "pattern": "^[^\\\\/:*?\"<>|]+$"}, "quality": {"type": "integer", "minimum": 0, "maximum": 12}, "on_conflict": {"type": "string", "enum": ["error", "version", "overwrite"], "default": "error"}, "expected_existing_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}},
     "outputSchema": { "type": "object" },
     "verification": "state",
     "rollback": "none",

@@ -10,6 +10,8 @@ export interface JobRecord {
   createdAt: string;
   updatedAt: string;
   message?: string;
+  operationId?: string;
+  cancelRequestedAt?: string;
   resumeToken?: string;
   result?: unknown;
   error?: unknown;
@@ -73,6 +75,20 @@ export class JobStore {
     this.prune();
     const current = this.jobs.get(id);
     if (!current) throw new PhotoshopMcpError("PRECONDITION_FAILED", `Unknown job: ${id}`);
+    if (TERMINAL_STATUSES.has(current.status) && patch.status && patch.status !== current.status) {
+      // Late host results belong to operation receipts; a terminal job never revives.
+      return structuredClone(current);
+    }
+    const allowed: Record<JobStatus, readonly JobStatus[]> = {
+      queued: ["running", "awaiting_user", "completed", "failed", "cancel_requested", "cancelled"],
+      running: ["completed", "failed", "awaiting_user", "cancel_requested", "cancelled"],
+      cancel_requested: ["cancelled", "failed"],
+      awaiting_user: ["running", "completed", "failed", "cancel_requested", "cancelled"],
+      completed: [], failed: [], cancelled: [],
+    };
+    if (patch.status && patch.status !== current.status && !allowed[current.status].includes(patch.status)) {
+      throw new PhotoshopMcpError("PRECONDITION_FAILED", `Invalid job transition ${current.status} -> ${patch.status}`);
+    }
     const updated = { ...current, ...patch, updatedAt: new Date(this.now()).toISOString() };
     this.jobs.set(id, updated);
     return structuredClone(updated);
@@ -81,7 +97,7 @@ export class JobStore {
   cancel(id: string): JobRecord {
     const current = this.get(id);
     if (["completed", "failed", "cancelled"].includes(current.status)) return current;
-    return this.update(id, { status: "cancelled", message: "Cancelled by MCP client" });
+    return this.update(id, { status: current.status === "running" ? "cancel_requested" : "cancelled", cancelRequestedAt: new Date(this.now()).toISOString(), message: current.status === "running" ? "Cancellation requested; host outcome pending" : "Cancelled by MCP client" });
   }
 
   list(): JobRecord[] {

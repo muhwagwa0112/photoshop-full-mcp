@@ -1,0 +1,212 @@
+{
+  "contractVersion": "1.0",
+  "requestId": "63406d34-65e7-59ee-8255-a5163e922c64",
+  "workflowHome": {
+    "app": "premiere",
+    "installationId": "example-premiere-install",
+    "namespaceId": "7f9b8642-0f63-502f-861d-4e7b8705a11a"
+  },
+  "recipeId": "pr.multicam_edit.v1",
+  "brief": "두 카메라와 별도 음성을 동기화하고 지정된 각도 계획에 따라 편집 가능한 다중 카메라 영상을 만든다.",
+  "inputs": {
+    "cameraA": {
+      "rootId": "source",
+      "relativePath": "multicam/cam_a.mp4"
+    },
+    "cameraB": {
+      "rootId": "source",
+      "relativePath": "multicam/cam_b.mp4"
+    },
+    "audio": {
+      "rootId": "source",
+      "relativePath": "multicam/recorder.wav"
+    }
+  },
+  "parameters": {
+    "sync": {
+      "primary": "timecode",
+      "fallback": "waveform",
+      "maxResidualOffsetMs": 20
+    },
+    "anglePlan": [
+      {
+        "fromFrame": "0",
+        "toFrame": "300",
+        "angle": "cameraA"
+      },
+      {
+        "fromFrame": "300",
+        "toFrame": "600",
+        "angle": "cameraB"
+      }
+    ],
+    "frameRate": {
+      "num": 30,
+      "den": 1
+    },
+    "nativeMulticamRequired": false,
+    "ordinaryEditableTrackFallbackAllowed": true,
+    "cameraInputs": [
+      "cameraA",
+      "cameraB"
+    ],
+    "audioInput": "audio",
+    "durationFrames": "600",
+    "gapPolicy": "error"
+  },
+  "delivery": {
+    "outputs": [
+      {
+        "rootId": "deliveries",
+        "relativeDirectory": "examples",
+        "basename": "multicam.prproj",
+        "format": "prproj",
+        "collision": {
+          "onConflict": "version",
+          "preserveSource": true
+        },
+        "outputKey": "multicam_prproj",
+        "encoding": {
+          "kind": "native_project",
+          "preserveLayersOrTimeline": true
+        }
+      },
+      {
+        "rootId": "deliveries",
+        "relativeDirectory": "examples",
+        "basename": "multicam.mp4",
+        "format": "mp4",
+        "collision": {
+          "onConflict": "version",
+          "preserveSource": true
+        },
+        "width": 1920,
+        "height": 1080,
+        "outputKey": "multicam_mp4",
+        "frameRate": {
+          "num": 30,
+          "den": 1
+        },
+        "pixelAspect": {
+          "num": 1,
+          "den": 1
+        },
+        "range": {
+          "kind": "whole_sequence"
+        },
+        "color": {
+          "primaries": "bt709",
+          "transfer": "bt709",
+          "matrix": "bt709",
+          "bitDepth": 8,
+          "range": "limited",
+          "alpha": "none"
+        },
+        "audio": {
+          "sampleRate": 48000,
+          "channels": 2,
+          "channelLayout": "stereo"
+        },
+        "encoding": {
+          "kind": "video",
+          "encoderPresetId": "h264-hd1080-30-sdr-aac48-stereo.v1",
+          "videoCodec": "h264",
+          "pixelFormat": "yuv420p",
+          "fieldOrder": "progressive",
+          "audioCodec": "aac",
+          "rateControl": "preset",
+          "allowPresetOverrides": false
+        }
+      }
+    ],
+    "preserveNativeEditing": true,
+    "allowedFallbacks": [
+      "native_equivalent"
+    ],
+    "verifyMode": "metadata_and_changed_regions"
+  },
+  "resources": {
+    "maxHostMutations": 1,
+    "maxWorkerJobs": 2,
+    "maxCpuThreads": 4,
+    "maxTemporaryBytes": "21474836480",
+    "maxRemoteBytes": "0",
+    "maxPaidCredits": 0,
+    "remoteTransferAllowed": false
+  },
+  "review": {
+    "enabled": true,
+    "requirements": [
+      {
+        "id": "sync",
+        "description": "동기 오차 요구값 이내",
+        "importance": "required",
+        "evaluator": "assertion",
+        "assertionIds": [
+          "sync.residual_offset"
+        ],
+        "evidenceKeys": [],
+        "passRule": {
+          "allAssertionsPass": true
+        }
+      },
+      {
+        "id": "angle_cuts",
+        "description": "각도 변경 시점 일치",
+        "importance": "required",
+        "evaluator": "assertion",
+        "assertionIds": [
+          "multicam.angle_ranges"
+        ],
+        "evidenceKeys": [],
+        "passRule": {
+          "allAssertionsPass": true
+        }
+      },
+      {
+        "id": "editable_angles",
+        "description": "원본 각도 재편집 가능",
+        "importance": "required",
+        "evaluator": "assertion",
+        "assertionIds": [
+          "multicam.native_structure"
+        ],
+        "evidenceKeys": [],
+        "passRule": {
+          "allAssertionsPass": true
+        }
+      },
+      {
+        "id": "visual_consistency",
+        "description": "각도 간 색·밝기의 일관성",
+        "importance": "preference",
+        "evaluator": "semantic",
+        "assertionIds": [],
+        "evidenceKeys": [
+          "multicam.angle_contact_sheet"
+        ],
+        "passRule": {
+          "allAssertionsPass": true,
+          "minConfidence": 0.75
+        }
+      }
+    ],
+    "maxRepairs": 2,
+    "maxReviewSeconds": 120
+  },
+  "controller": {
+    "mode": "configured_provider",
+    "providerId": "local-vision-gemma3-4b",
+    "waitDeadline": "2026-11-16T00:00:00Z",
+    "modelBudget": {
+      "maxRequests": 12,
+      "maxInputTokens": 96000,
+      "maxOutputTokens": 12000,
+      "maxImagePixels": "48000000",
+      "maxElapsedSeconds": 600,
+      "maxCostMinor": "0",
+      "currency": "USD",
+      "enforcement": "server_enforced"
+    }
+  }
+}

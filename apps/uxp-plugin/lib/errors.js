@@ -19,7 +19,7 @@ function normalizeError(error) {
   if (lower.includes("modal")) code = "MODAL_BUSY";
   else if (lower.includes("cancel")) code = "CANCELLED";
   else if (lower.includes("timeout") || lower.includes("deadline")) code = "TIMEOUT";
-  return { code, message };
+  return { code, message, ...(error && error.details && typeof error.details === "object" ? { details: error.details } : {}) };
 }
 
 module.exports = { PluginError, normalizeError };

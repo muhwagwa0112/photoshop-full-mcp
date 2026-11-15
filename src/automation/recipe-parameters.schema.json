@@ -1,0 +1,2724 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fig-studio:adobe-mcp:recipe-parameters:1.0",
+  "title": "Adobe MCP proposed recipe parameters v1.0",
+  "$comment": "Plan artifact only. Match parameters to the recipe ID $defs. Defaults are annotations, explicitly materialized then revalidated by normalizeRecipeRequest. Cross-field checks and failure codes: recipe-normalization.md. Dynamic maps have constrained patternProperties and additionalProperties:false.",
+  "$defs": {
+    "InputKey": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$",
+      "description": "Exact input binding key, never a filesystem path. Recipe parameter references must exist in RecipeRequest.inputs. Only auto-prepared pr_clip source selectors may use persisted authorized prepared source bindings defined in recipe-normalization.md."
+    },
+    "RoleKey": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$",
+      "description": "Durable sidecar logical role key, never a display-name selector."
+    },
+    "Sha256": {
+      "type": "string",
+      "minLength": 64,
+      "maxLength": 64,
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "DecimalFrame": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 19,
+      "pattern": "^(0|[1-9][0-9]*)$",
+      "description": "Unsigned decimal frame; BigInt normalization enforces <=9223372036854775807."
+    },
+    "PositiveFrame": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 19,
+      "pattern": "^[1-9][0-9]*$",
+      "description": "Positive decimal frame count; BigInt normalization enforces <=9223372036854775807."
+    },
+    "UnsignedTicks": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 22,
+      "pattern": "^(0|[1-9][0-9]*)$",
+      "description": "Premiere tick string; BigInt normalization enforces selected-host bounds."
+    },
+    "SignedTicks": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 23,
+      "pattern": "^-?(0|[1-9][0-9]*)$",
+      "description": "Signed tick offset; negative zero is rejected semantically."
+    },
+    "FrameRate": {
+      "type": "object",
+      "properties": {
+        "num": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 240000
+        },
+        "den": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100000
+        }
+      },
+      "required": [
+        "num",
+        "den"
+      ],
+      "additionalProperties": false,
+      "description": "Positive rational. Reduce by gcd; require 1<=num/den<=240 for this recipe profile; preserve 30000/1001 exactly."
+    },
+    "ColorHex": {
+      "type": "string",
+      "minLength": 7,
+      "maxLength": 7,
+      "pattern": "^#[A-Fa-f0-9]{6}$"
+    },
+    "PixelCanvas": {
+      "type": "object",
+      "properties": {
+        "width": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 300000
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 300000
+        }
+      },
+      "required": [
+        "width",
+        "height"
+      ],
+      "additionalProperties": false,
+      "description": "Proposed recipe limits; selected host/format and resource limits additionally apply."
+    },
+    "NormalizedRect": {
+      "type": "object",
+      "properties": {
+        "x": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "y": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "width": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "exclusiveMinimum": 0
+        },
+        "height": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "exclusiveMinimum": 0
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "width",
+        "height"
+      ],
+      "additionalProperties": false,
+      "description": "Document-normalized, top-left origin. Check x+width<=1 and y+height<=1."
+    },
+    "PixelRect": {
+      "type": "object",
+      "properties": {
+        "x": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 300000
+        },
+        "y": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 300000
+        },
+        "width": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 300000,
+          "exclusiveMinimum": 0
+        },
+        "height": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 300000,
+          "exclusiveMinimum": 0
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "width",
+        "height"
+      ],
+      "additionalProperties": false,
+      "description": "Orientation-corrected pixels; check against actual source bounds."
+    },
+    "TextByRole": {
+      "type": "object",
+      "patternProperties": {
+        "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 20000
+        }
+      },
+      "additionalProperties": false,
+      "minProperties": 1,
+      "maxProperties": 128,
+      "description": "Exact text by durable role. Empty string clears explicitly. No trimming, translation or shortening."
+    },
+    "ImageByRole": {
+      "type": "object",
+      "patternProperties": {
+        "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$": {
+          "$ref": "#/$defs/InputKey"
+        }
+      },
+      "additionalProperties": false,
+      "minProperties": 1,
+      "maxProperties": 128
+    },
+    "Variant": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "$ref": "#/$defs/InputKey"
+        },
+        "width": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 300000
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 300000
+        },
+        "title": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 20000
+        },
+        "safeMarginRatio": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 0.4,
+          "default": 0.05
+        }
+      },
+      "required": [
+        "key",
+        "width",
+        "height"
+      ],
+      "additionalProperties": false,
+      "description": "Unique key; omitted title inherits recipe title, empty title explicitly clears it."
+    },
+    "FontPolicy": {
+      "type": "object",
+      "properties": {
+        "postScriptName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "fallbackPostScriptNames": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "minItems": 0,
+          "maxItems": 16,
+          "uniqueItems": true,
+          "default": []
+        },
+        "minimumSizePx": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 4096,
+          "default": 24
+        },
+        "maximumSizePx": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 4096,
+          "default": 160
+        },
+        "maxLines": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 8,
+          "default": 3
+        },
+        "lineHeightRatio": {
+          "type": "number",
+          "minimum": 0.5,
+          "maximum": 4,
+          "default": 1.15
+        },
+        "overflow": {
+          "type": "string",
+          "enum": [
+            "shrink_then_wrap",
+            "error"
+          ],
+          "default": "shrink_then_wrap"
+        },
+        "alignment": {
+          "type": "string",
+          "enum": [
+            "left",
+            "center",
+            "right"
+          ],
+          "default": "left"
+        }
+      },
+      "required": [
+        "postScriptName"
+      ],
+      "additionalProperties": false,
+      "description": "min<=max; only explicitly ordered installed PostScript fallbacks are allowed."
+    },
+    "MaskPolicy": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "type": "string",
+          "enum": [
+            "none",
+            "input_alpha",
+            "input_mask",
+            "native_subject",
+            "local_model"
+          ]
+        },
+        "inputKey": {
+          "$ref": "#/$defs/InputKey"
+        },
+        "providerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "featherPx": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000,
+          "default": 0
+        },
+        "contractPx": {
+          "type": "number",
+          "minimum": -500,
+          "maximum": 500,
+          "default": 0
+        }
+      },
+      "required": [
+        "source"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "source": {
+                "const": "input_mask"
+              }
+            },
+            "required": [
+              "source"
+            ]
+          },
+          "then": {
+            "required": [
+              "inputKey"
+            ],
+            "not": {
+              "required": [
+                "providerId"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "source": {
+                "const": "local_model"
+              }
+            },
+            "required": [
+              "source"
+            ]
+          },
+          "then": {
+            "required": [
+              "providerId"
+            ],
+            "not": {
+              "required": [
+                "inputKey"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "source": {
+                "enum": [
+                  "none",
+                  "input_alpha",
+                  "native_subject"
+                ]
+              }
+            },
+            "required": [
+              "source"
+            ]
+          },
+          "then": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "inputKey"
+                  ]
+                },
+                {
+                  "required": [
+                    "providerId"
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "source": {
+                "const": "none"
+              }
+            },
+            "required": [
+              "source"
+            ]
+          },
+          "then": {
+            "properties": {
+              "featherPx": {
+                "const": 0
+              },
+              "contractPx": {
+                "const": 0
+              }
+            }
+          }
+        }
+      ],
+      "description": "No implicit provider substitution. none preserves current transparency, not background removal."
+    },
+    "Sync": {
+      "type": "object",
+      "properties": {
+        "primary": {
+          "type": "string",
+          "enum": [
+            "timecode",
+            "waveform",
+            "manual"
+          ]
+        },
+        "fallback": {
+          "type": "string",
+          "enum": [
+            "none",
+            "waveform",
+            "manual"
+          ],
+          "default": "none"
+        },
+        "referenceInput": {
+          "$ref": "#/$defs/InputKey"
+        },
+        "maxResidualOffsetMs": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000,
+          "default": 20
+        },
+        "origin": {
+          "type": "string",
+          "enum": [
+            "reference_start",
+            "common_overlap_start"
+          ],
+          "default": "common_overlap_start"
+        },
+        "manualOffsetsTicks": {
+          "type": "object",
+          "patternProperties": {
+            "^[A-Za-z][A-Za-z0-9_-]{0,63}$": {
+              "$ref": "#/$defs/SignedTicks"
+            }
+          },
+          "additionalProperties": false,
+          "minProperties": 1,
+          "maxProperties": 32
+        }
+      },
+      "required": [
+        "primary"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "anyOf": [
+              {
+                "properties": {
+                  "primary": {
+                    "const": "manual"
+                  }
+                },
+                "required": [
+                  "primary"
+                ]
+              },
+              {
+                "properties": {
+                  "fallback": {
+                    "const": "manual"
+                  }
+                },
+                "required": [
+                  "fallback"
+                ]
+              }
+            ]
+          },
+          "then": {
+            "required": [
+              "manualOffsetsTicks"
+            ]
+          }
+        },
+        {
+          "if": {
+            "not": {
+              "anyOf": [
+                {
+                  "properties": {
+                    "primary": {
+                      "const": "manual"
+                    }
+                  },
+                  "required": [
+                    "primary"
+                  ]
+                },
+                {
+                  "properties": {
+                    "fallback": {
+                      "const": "manual"
+                    }
+                  },
+                  "required": [
+                    "fallback"
+                  ]
+                }
+              ]
+            }
+          },
+          "then": {
+            "not": {
+              "required": [
+                "manualOffsetsTicks"
+              ]
+            }
+          }
+        }
+      ],
+      "description": "source zero maps to reference time by offset ticks. reference defaults to voice/interview or audioInput/multicam. Reject duplicate primary/fallback and excessive residual error."
+    },
+    "CaptionSettings": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "type": "string",
+          "enum": [
+            "local_asr",
+            "input_srt",
+            "input_vtt"
+          ]
+        },
+        "inputKey": {
+          "$ref": "#/$defs/InputKey"
+        },
+        "providerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "nativeEditable": {
+          "type": "boolean",
+          "default": true
+        },
+        "alsoExportSrt": {
+          "type": "boolean",
+          "default": true
+        },
+        "alsoExportVtt": {
+          "type": "boolean",
+          "default": false
+        },
+        "maxLines": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4,
+          "default": 2
+        },
+        "maxCharsPerLine": {
+          "type": "integer",
+          "minimum": 5,
+          "maximum": 100,
+          "default": 24
+        },
+        "minimumDurationMs": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 10000,
+          "default": 500
+        },
+        "maximumDurationMs": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 30000,
+          "default": 6000
+        },
+        "overlapPolicy": {
+          "type": "string",
+          "enum": [
+            "error",
+            "merge_adjacent_same_speaker"
+          ],
+          "default": "error"
+        },
+        "uncertainWordsPolicy": {
+          "type": "string",
+          "enum": [
+            "keep_flagged",
+            "error"
+          ],
+          "default": "keep_flagged"
+        },
+        "confidenceThreshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 0.8
+        },
+        "stylePresetId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$",
+          "default": "caption.default"
+        }
+      },
+      "required": [
+        "source"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "source": {
+                "enum": [
+                  "input_srt",
+                  "input_vtt"
+                ]
+              }
+            },
+            "required": [
+              "source"
+            ]
+          },
+          "then": {
+            "required": [
+              "inputKey"
+            ],
+            "not": {
+              "required": [
+                "providerId"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "source": {
+                "const": "local_asr"
+              }
+            },
+            "required": [
+              "source"
+            ]
+          },
+          "then": {
+            "not": {
+              "required": [
+                "inputKey"
+              ]
+            }
+          }
+        }
+      ],
+      "description": "Source cues use source-media time, remapped after cuts. Configured style/provider must exist. nativeEditable=false alone does not authorize rendered fallback."
+    },
+    "Ducking": {
+      "type": "object",
+      "properties": {
+        "musicGainDb": {
+          "type": "number",
+          "minimum": -96,
+          "maximum": 12,
+          "default": -10
+        },
+        "speechDuckDb": {
+          "type": "number",
+          "minimum": -48,
+          "maximum": 0,
+          "default": -8
+        },
+        "attackMs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 5000,
+          "default": 120
+        },
+        "releaseMs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000,
+          "default": 450
+        }
+      },
+      "required": [],
+      "additionalProperties": false,
+      "description": "Native editable gain envelope. Object presence requires music input."
+    },
+    "BrollPlacement": {
+      "type": "object",
+      "properties": {
+        "inputKey": {
+          "$ref": "#/$defs/InputKey"
+        },
+        "sourceInTicks": {
+          "$ref": "#/$defs/UnsignedTicks"
+        },
+        "fromFrame": {
+          "$ref": "#/$defs/DecimalFrame"
+        },
+        "toFrame": {
+          "$ref": "#/$defs/PositiveFrame"
+        },
+        "preserveSpeechAudio": {
+          "const": true,
+          "default": true
+        }
+      },
+      "required": [
+        "inputKey",
+        "sourceInTicks",
+        "fromFrame",
+        "toFrame"
+      ],
+      "additionalProperties": false,
+      "description": "Half-open timeline frames at sequenceRate, source ticks, speed=1. No overlaps or out-of-range placement."
+    },
+    "RoleSelector": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "ps_layer"
+            },
+            "layerKind": {
+              "type": "string",
+              "enum": [
+                "pixel",
+                "text",
+                "smart_object",
+                "adjustment",
+                "group",
+                "shape",
+                "artboard"
+              ]
+            },
+            "contentFingerprint": {
+              "$ref": "#/$defs/Sha256"
+            },
+            "ancestorFingerprints": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Sha256"
+              },
+              "minItems": 0,
+              "maxItems": 64
+            },
+            "logicalTag": {
+              "$ref": "#/$defs/RoleKey"
+            }
+          },
+          "required": [
+            "kind",
+            "layerKind",
+            "contentFingerprint",
+            "ancestorFingerprints"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "pr_sequence"
+            },
+            "sequenceGuid": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "structuralFingerprint": {
+              "$ref": "#/$defs/Sha256"
+            }
+          },
+          "required": [
+            "kind",
+            "sequenceGuid",
+            "structuralFingerprint"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "pr_track"
+            },
+            "sequenceRole": {
+              "$ref": "#/$defs/RoleKey"
+            },
+            "mediaType": {
+              "type": "string",
+              "enum": [
+                "video",
+                "audio",
+                "caption"
+              ]
+            },
+            "trackFingerprint": {
+              "$ref": "#/$defs/Sha256"
+            }
+          },
+          "required": [
+            "kind",
+            "sequenceRole",
+            "mediaType",
+            "trackFingerprint"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "pr_clip"
+            },
+            "sequenceRole": {
+              "$ref": "#/$defs/RoleKey"
+            },
+            "mediaType": {
+              "type": "string",
+              "enum": [
+                "video",
+                "audio"
+              ]
+            },
+            "sourceInputKey": {
+              "$ref": "#/$defs/InputKey",
+              "description": "Explicit sidecar: exact RecipeRequest.inputs key. Auto-prepared sidecar only: may reference a persisted, authorized prepared source binding; never an arbitrary path. Replacement parameter input keys remain request inputs."
+            },
+            "sourceSha256": {
+              "$ref": "#/$defs/Sha256"
+            },
+            "sourceInTicks": {
+              "$ref": "#/$defs/UnsignedTicks"
+            },
+            "sourceOutTicks": {
+              "$ref": "#/$defs/UnsignedTicks"
+            },
+            "timelineStartTicks": {
+              "$ref": "#/$defs/UnsignedTicks"
+            },
+            "timelineEndTicks": {
+              "$ref": "#/$defs/UnsignedTicks"
+            },
+            "trackFingerprint": {
+              "$ref": "#/$defs/Sha256"
+            },
+            "structuralFingerprint": {
+              "$ref": "#/$defs/Sha256"
+            }
+          },
+          "required": [
+            "kind",
+            "sequenceRole",
+            "mediaType",
+            "sourceInputKey",
+            "sourceSha256",
+            "sourceInTicks",
+            "sourceOutTicks",
+            "timelineStartTicks",
+            "timelineEndTicks",
+            "trackFingerprint",
+            "structuralFingerprint"
+          ],
+          "additionalProperties": false
+        }
+      ],
+      "description": "Source-bound durable selector, not live TargetRef. Exactly one match required; names/indexes are not selectors."
+    },
+    "RoleBinding": {
+      "type": "object",
+      "properties": {
+        "ownerInputKey": {
+          "$ref": "#/$defs/InputKey"
+        },
+        "ownerSha256": {
+          "$ref": "#/$defs/Sha256"
+        },
+        "selector": {
+          "$ref": "#/$defs/RoleSelector"
+        },
+        "fingerprintScope": {
+          "enum": [
+            "full_content",
+            "observed_projection"
+          ],
+          "description": "Observed projection is explicitly narrower than a full pixel/content fingerprint."
+        }
+      },
+      "required": [
+        "ownerInputKey",
+        "ownerSha256",
+        "selector"
+      ],
+      "additionalProperties": false
+    },
+    "RoleManifest": {
+      "type": "object",
+      "properties": {
+        "schemaVersion": {
+          "const": "1.0"
+        },
+        "roles": {
+          "type": "object",
+          "patternProperties": {
+            "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$": {
+              "$ref": "#/$defs/RoleBinding"
+            }
+          },
+          "additionalProperties": false,
+          "minProperties": 1,
+          "maxProperties": 512
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "roles"
+      ],
+      "additionalProperties": false,
+      "description": "Sidecar loaded through inputs.roleManifest. ownerSha256 binds exact source. pr_clip source media must be explicit authorized inputs."
+    },
+    "ps.product_variants.v1": {
+      "type": "object",
+      "properties": {
+        "roleManifest": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "roleManifest"
+          ],
+          "default": "auto",
+          "description": "auto: prepare creates and persists exact source-bound role mappings. roleManifest: load inputs.roleManifest. Neither mode permits first-name/index matching."
+        },
+        "roles": {
+          "type": "object",
+          "properties": {
+            "product": {
+              "$ref": "#/$defs/RoleKey"
+            },
+            "logo": {
+              "$ref": "#/$defs/RoleKey"
+            },
+            "title": {
+              "$ref": "#/$defs/RoleKey"
+            }
+          },
+          "required": [
+            "product",
+            "logo",
+            "title"
+          ],
+          "additionalProperties": false
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 20000
+        },
+        "variants": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Variant"
+          },
+          "minItems": 1,
+          "maxItems": 32
+        },
+        "fit": {
+          "type": "string",
+          "enum": [
+            "contain",
+            "cover"
+          ],
+          "default": "contain"
+        },
+        "backgroundColor": {
+          "$ref": "#/$defs/ColorHex",
+          "default": "#FFFFFF"
+        },
+        "preserveProductColor": {
+          "type": "boolean",
+          "default": true
+        },
+        "mask": {
+          "$ref": "#/$defs/MaskPolicy",
+          "default": {
+            "source": "input_alpha"
+          }
+        },
+        "font": {
+          "$ref": "#/$defs/FontPolicy"
+        },
+        "variantMode": {
+          "type": "string",
+          "enum": [
+            "separate_documents",
+            "native_artboards"
+          ],
+          "default": "separate_documents"
+        }
+      },
+      "required": [
+        "roles",
+        "title",
+        "variants"
+      ],
+      "additionalProperties": false,
+      "description": "Required inputs: product, template, logo. roleManifest input is required only in explicit roleManifest mode. Auto mode persists exact bindings during prepare. Binding and output coverage checks are defined in recipe-normalization.md."
+    },
+    "PhotoAdjustment": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "exposure"
+            },
+            "target": {
+              "type": "string",
+              "enum": [
+                "subject",
+                "background",
+                "composite"
+              ]
+            },
+            "exposureEv": {
+              "type": "number",
+              "minimum": -20,
+              "maximum": 20
+            },
+            "offset": {
+              "type": "number",
+              "minimum": -0.5,
+              "maximum": 0.5,
+              "default": 0
+            },
+            "gamma": {
+              "type": "number",
+              "minimum": 0.01,
+              "maximum": 10,
+              "default": 1
+            }
+          },
+          "required": [
+            "kind",
+            "target",
+            "exposureEv"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "levels"
+            },
+            "target": {
+              "type": "string",
+              "enum": [
+                "subject",
+                "background",
+                "composite"
+              ]
+            },
+            "inputBlack": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "inputWhite": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "gamma": {
+              "type": "number",
+              "minimum": 0.01,
+              "maximum": 10,
+              "default": 1
+            },
+            "outputBlack": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "default": 0
+            },
+            "outputWhite": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "default": 1
+            }
+          },
+          "required": [
+            "kind",
+            "target",
+            "inputBlack",
+            "inputWhite"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "curves"
+            },
+            "target": {
+              "type": "string",
+              "enum": [
+                "subject",
+                "background",
+                "composite"
+              ]
+            },
+            "channel": {
+              "type": "string",
+              "enum": [
+                "composite",
+                "red",
+                "green",
+                "blue"
+              ],
+              "default": "composite"
+            },
+            "points": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "input": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "output": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                },
+                "required": [
+                  "input",
+                  "output"
+                ],
+                "additionalProperties": false
+              },
+              "minItems": 2,
+              "maxItems": 32
+            }
+          },
+          "required": [
+            "kind",
+            "target",
+            "points"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "hue_saturation"
+            },
+            "target": {
+              "type": "string",
+              "enum": [
+                "subject",
+                "background",
+                "composite"
+              ]
+            },
+            "hueDegrees": {
+              "type": "number",
+              "minimum": -180,
+              "maximum": 180,
+              "default": 0
+            },
+            "saturationPercent": {
+              "type": "number",
+              "minimum": -100,
+              "maximum": 100,
+              "default": 0
+            },
+            "lightnessPercent": {
+              "type": "number",
+              "minimum": -100,
+              "maximum": 100,
+              "default": 0
+            }
+          },
+          "required": [
+            "kind",
+            "target"
+          ],
+          "additionalProperties": false
+        }
+      ],
+      "description": "Native-editable typed adjustments. Check level ordering/curve inputs; no raw ActionJSON."
+    },
+    "RetouchStep": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "$ref": "#/$defs/InputKey"
+        },
+        "region": {
+          "$ref": "#/$defs/PixelRect"
+        },
+        "source": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "const": "clone"
+                },
+                "sourceRegion": {
+                  "$ref": "#/$defs/PixelRect"
+                }
+              },
+              "required": [
+                "kind",
+                "sourceRegion"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "const": "asset_patch"
+                },
+                "inputKey": {
+                  "$ref": "#/$defs/InputKey"
+                }
+              },
+              "required": [
+                "kind",
+                "inputKey"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "const": "local_restore"
+                },
+                "providerId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128,
+                  "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+                }
+              },
+              "required": [
+                "kind",
+                "providerId"
+              ],
+              "additionalProperties": false
+            }
+          ],
+          "description": "Explicit retouch source."
+        },
+        "featherPx": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000,
+          "default": 2
+        },
+        "opacityPercent": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "default": 100
+        }
+      },
+      "required": [
+        "key",
+        "region",
+        "source"
+      ],
+      "additionalProperties": false,
+      "description": "Separate retouch layer/mask. Clone dimensions match; local provider must be configured and authorized."
+    },
+    "ps.photo_composite.v1": {
+      "type": "object",
+      "properties": {
+        "canvas": {
+          "$ref": "#/$defs/PixelCanvas"
+        },
+        "subject": {
+          "type": "object",
+          "properties": {
+            "fit": {
+              "type": "string",
+              "enum": [
+                "contain",
+                "cover"
+              ],
+              "default": "contain"
+            },
+            "box": {
+              "$ref": "#/$defs/NormalizedRect",
+              "default": {
+                "x": 0,
+                "y": 0,
+                "width": 1,
+                "height": 1
+              }
+            },
+            "mask": {
+              "$ref": "#/$defs/MaskPolicy"
+            }
+          },
+          "required": [
+            "mask"
+          ],
+          "additionalProperties": false
+        },
+        "background": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "const": "color"
+                },
+                "color": {
+                  "$ref": "#/$defs/ColorHex"
+                }
+              },
+              "required": [
+                "kind",
+                "color"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "const": "asset"
+                },
+                "inputKey": {
+                  "$ref": "#/$defs/InputKey"
+                },
+                "fit": {
+                  "type": "string",
+                  "enum": [
+                    "contain",
+                    "cover"
+                  ],
+                  "default": "cover"
+                }
+              },
+              "required": [
+                "kind",
+                "inputKey"
+              ],
+              "additionalProperties": false
+            }
+          ],
+          "description": "Solid-color or explicit asset background."
+        },
+        "adjustments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PhotoAdjustment"
+          },
+          "minItems": 0,
+          "maxItems": 32,
+          "default": []
+        },
+        "retouch": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RetouchStep"
+          },
+          "minItems": 0,
+          "maxItems": 128,
+          "default": []
+        },
+        "colorPolicy": {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": [
+                "preserve_input",
+                "convert_working"
+              ],
+              "default": "preserve_input"
+            },
+            "iccProfile": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            }
+          },
+          "required": [],
+          "additionalProperties": false,
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "mode": {
+                    "const": "convert_working"
+                  }
+                },
+                "required": [
+                  "mode"
+                ]
+              },
+              "then": {
+                "required": [
+                  "iccProfile"
+                ]
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "mode": {
+                    "const": "preserve_input"
+                  }
+                },
+                "required": [
+                  "mode"
+                ]
+              },
+              "then": {
+                "not": {
+                  "required": [
+                    "iccProfile"
+                  ]
+                }
+              }
+            }
+          ],
+          "default": {
+            "mode": "preserve_input"
+          }
+        },
+        "preserveOriginal": {
+          "const": true,
+          "default": true
+        }
+      },
+      "required": [
+        "canvas",
+        "subject",
+        "background"
+      ],
+      "additionalProperties": false,
+      "description": "Required input: photo. New working document creates logical roles from creation receipts; no existing-object role lookup. Mask/background/patch keys additionally require inputs."
+    },
+    "SocialLayout": {
+      "type": "object",
+      "properties": {
+        "titleBox": {
+          "$ref": "#/$defs/NormalizedRect"
+        },
+        "subjectBox": {
+          "$ref": "#/$defs/NormalizedRect"
+        },
+        "logoBox": {
+          "$ref": "#/$defs/NormalizedRect"
+        },
+        "subtitleBox": {
+          "$ref": "#/$defs/NormalizedRect"
+        },
+        "safeMarginRatio": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 0.4,
+          "default": 0.05
+        },
+        "exclusionZones": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/NormalizedRect"
+          },
+          "minItems": 0,
+          "maxItems": 32,
+          "default": []
+        },
+        "allowTitleSubjectOverlap": {
+          "type": "boolean",
+          "default": false
+        }
+      },
+      "required": [
+        "titleBox",
+        "subjectBox",
+        "logoBox"
+      ],
+      "additionalProperties": false
+    },
+    "ps.social_layout.v1": {
+      "type": "object",
+      "properties": {
+        "roleManifest": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "roleManifest"
+          ],
+          "default": "auto",
+          "description": "auto: prepare creates and persists exact source-bound role mappings. roleManifest: load inputs.roleManifest. Neither mode permits first-name/index matching."
+        },
+        "roles": {
+          "type": "object",
+          "properties": {
+            "subject": {
+              "$ref": "#/$defs/RoleKey"
+            },
+            "logo": {
+              "$ref": "#/$defs/RoleKey"
+            },
+            "title": {
+              "$ref": "#/$defs/RoleKey"
+            },
+            "subtitle": {
+              "$ref": "#/$defs/RoleKey"
+            }
+          },
+          "required": [
+            "subject",
+            "logo",
+            "title"
+          ],
+          "additionalProperties": false
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 20000
+        },
+        "subtitle": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 20000
+        },
+        "variants": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Variant"
+          },
+          "minItems": 1,
+          "maxItems": 32
+        },
+        "layout": {
+          "$ref": "#/$defs/SocialLayout"
+        },
+        "font": {
+          "$ref": "#/$defs/FontPolicy"
+        },
+        "mask": {
+          "$ref": "#/$defs/MaskPolicy",
+          "default": {
+            "source": "input_alpha"
+          }
+        },
+        "backgroundColor": {
+          "$ref": "#/$defs/ColorHex",
+          "default": "#FFFFFF"
+        },
+        "variantMode": {
+          "type": "string",
+          "enum": [
+            "separate_documents",
+            "native_artboards"
+          ],
+          "default": "separate_documents"
+        },
+        "missingRolePolicy": {
+          "const": "error",
+          "default": "error"
+        }
+      },
+      "required": [
+        "roles",
+        "title",
+        "variants",
+        "layout",
+        "font"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "required": [
+              "subtitle"
+            ]
+          },
+          "then": {
+            "properties": {
+              "roles": {
+                "required": [
+                  "subtitle"
+                ]
+              },
+              "layout": {
+                "required": [
+                  "subtitleBox"
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "description": "Required inputs: template, subject, logo. roleManifest input is required only in explicit roleManifest mode. Auto mode persists exact bindings during prepare. Preserve exact text and declared font/layout bounds."
+    },
+    "SilenceCuts": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "minimumSilenceMs": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 30000,
+          "default": 800
+        },
+        "keepHeadMs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000,
+          "default": 160
+        },
+        "keepTailMs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000,
+          "default": 180
+        }
+      },
+      "required": [
+        "enabled"
+      ],
+      "additionalProperties": false,
+      "description": "When enabled keepHeadMs+keepTailMs<minimumSilenceMs; never cut protected spoken-word spans."
+    },
+    "pr.interview_captioned.v1": {
+      "type": "object",
+      "properties": {
+        "sequenceRate": {
+          "$ref": "#/$defs/FrameRate"
+        },
+        "language": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 35,
+          "pattern": "^(auto|[a-z]{2,3}(-[A-Za-z0-9]{2,8})*)$"
+        },
+        "editIntent": {
+          "type": "object",
+          "properties": {
+            "preserveSpeechMeaning": {
+              "const": true,
+              "default": true
+            },
+            "silenceCuts": {
+              "$ref": "#/$defs/SilenceCuts"
+            },
+            "cutPolicy": {
+              "type": "string",
+              "enum": [
+                "whole_words_only",
+                "explicit_keep_ranges"
+              ],
+              "default": "whole_words_only"
+            },
+            "keepRanges": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "fromTicks": {
+                    "$ref": "#/$defs/UnsignedTicks"
+                  },
+                  "toTicks": {
+                    "$ref": "#/$defs/UnsignedTicks"
+                  }
+                },
+                "required": [
+                  "fromTicks",
+                  "toTicks"
+                ],
+                "additionalProperties": false
+              },
+              "minItems": 1,
+              "maxItems": 512
+            }
+          },
+          "required": [
+            "preserveSpeechMeaning",
+            "silenceCuts"
+          ],
+          "additionalProperties": false,
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "cutPolicy": {
+                    "const": "explicit_keep_ranges"
+                  }
+                },
+                "required": [
+                  "cutPolicy"
+                ]
+              },
+              "then": {
+                "required": [
+                  "keepRanges"
+                ]
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "cutPolicy": {
+                    "const": "whole_words_only"
+                  }
+                },
+                "required": [
+                  "cutPolicy"
+                ]
+              },
+              "then": {
+                "not": {
+                  "required": [
+                    "keepRanges"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "sync": {
+          "$ref": "#/$defs/Sync"
+        },
+        "captions": {
+          "$ref": "#/$defs/CaptionSettings"
+        },
+        "ducking": {
+          "$ref": "#/$defs/Ducking"
+        },
+        "brollPlan": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/BrollPlacement"
+          },
+          "minItems": 0,
+          "maxItems": 256,
+          "default": []
+        },
+        "audioTargetIsExamplePreset": {
+          "type": "boolean",
+          "default": false
+        }
+      },
+      "required": [
+        "sequenceRate",
+        "language",
+        "editIntent",
+        "sync",
+        "captions"
+      ],
+      "additionalProperties": false,
+      "description": "Required inputs: camera, voice. ducking requires music. broll/caption inputKey references are required if used. Delivery audio targets do not come from the informational audioTargetIsExamplePreset flag."
+    },
+    "AngleCut": {
+      "type": "object",
+      "properties": {
+        "fromFrame": {
+          "$ref": "#/$defs/DecimalFrame"
+        },
+        "toFrame": {
+          "$ref": "#/$defs/PositiveFrame"
+        },
+        "angle": {
+          "$ref": "#/$defs/InputKey"
+        }
+      },
+      "required": [
+        "fromFrame",
+        "toFrame",
+        "angle"
+      ],
+      "additionalProperties": false,
+      "description": "Output-frame [start,end). Angle must be in cameraInputs; no first-camera fallback."
+    },
+    "pr.multicam_edit.v1": {
+      "type": "object",
+      "properties": {
+        "cameraInputs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/InputKey"
+          },
+          "minItems": 2,
+          "maxItems": 16,
+          "uniqueItems": true
+        },
+        "audioInput": {
+          "$ref": "#/$defs/InputKey"
+        },
+        "sync": {
+          "$ref": "#/$defs/Sync"
+        },
+        "anglePlan": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/AngleCut"
+          },
+          "minItems": 1,
+          "maxItems": 10000
+        },
+        "durationFrames": {
+          "$ref": "#/$defs/PositiveFrame"
+        },
+        "frameRate": {
+          "$ref": "#/$defs/FrameRate"
+        },
+        "gapPolicy": {
+          "type": "string",
+          "enum": [
+            "error",
+            "hold_previous"
+          ],
+          "default": "error"
+        },
+        "nativeMulticamRequired": {
+          "type": "boolean",
+          "default": false
+        },
+        "ordinaryEditableTrackFallbackAllowed": {
+          "type": "boolean",
+          "default": true
+        },
+        "colorMatch": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": false
+            },
+            "referenceAngle": {
+              "$ref": "#/$defs/InputKey"
+            },
+            "method": {
+              "type": "string",
+              "enum": [
+                "manual_values",
+                "shot_statistics"
+              ],
+              "default": "shot_statistics"
+            },
+            "manualByAngle": {
+              "type": "object",
+              "patternProperties": {
+                "^[A-Za-z][A-Za-z0-9_-]{0,63}$": {
+                  "type": "object",
+                  "properties": {
+                    "exposureEv": {
+                      "type": "number",
+                      "minimum": -10,
+                      "maximum": 10,
+                      "default": 0
+                    },
+                    "temperatureShift": {
+                      "type": "number",
+                      "minimum": -100,
+                      "maximum": 100,
+                      "default": 0
+                    },
+                    "tintShift": {
+                      "type": "number",
+                      "minimum": -100,
+                      "maximum": 100,
+                      "default": 0
+                    },
+                    "saturationPercent": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 200,
+                      "default": 100
+                    }
+                  },
+                  "required": [],
+                  "additionalProperties": false
+                }
+              },
+              "minProperties": 1,
+              "maxProperties": 16,
+              "additionalProperties": false
+            }
+          },
+          "required": [],
+          "additionalProperties": false,
+          "default": {
+            "enabled": false
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "enabled": {
+                    "const": true
+                  }
+                },
+                "required": [
+                  "enabled"
+                ]
+              },
+              "then": {
+                "required": [
+                  "referenceAngle"
+                ]
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "enabled": {
+                    "const": true
+                  },
+                  "method": {
+                    "const": "manual_values"
+                  }
+                },
+                "required": [
+                  "enabled",
+                  "method"
+                ]
+              },
+              "then": {
+                "required": [
+                  "manualByAngle"
+                ]
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "method": {
+                    "const": "shot_statistics"
+                  }
+                },
+                "required": [
+                  "method"
+                ]
+              },
+              "then": {
+                "not": {
+                  "required": [
+                    "manualByAngle"
+                  ]
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "enabled": {
+                    "const": false
+                  }
+                },
+                "required": [
+                  "enabled"
+                ]
+              },
+              "then": {
+                "not": {
+                  "anyOf": [
+                    {
+                      "required": [
+                        "referenceAngle"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "manualByAngle"
+                      ]
+                    }
+                  ]
+                },
+                "properties": {
+                  "method": {
+                    "const": "shot_statistics"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "required": [
+        "cameraInputs",
+        "audioInput",
+        "sync",
+        "anglePlan",
+        "durationFrames",
+        "frameRate"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "nativeMulticamRequired": {
+                "const": true
+              }
+            },
+            "required": [
+              "nativeMulticamRequired"
+            ]
+          },
+          "then": {
+            "properties": {
+              "ordinaryEditableTrackFallbackAllowed": {
+                "const": false
+              }
+            },
+            "required": [
+              "ordinaryEditableTrackFallbackAllowed"
+            ]
+          }
+        }
+      ],
+      "description": "Dynamic required inputs are cameraInputs and audioInput. Duration fits synchronized coverage. Reject overlaps/gaps/bounds; editable-track fallback also requires delivery permission."
+    },
+    "RevisionChange": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "changeKey": {
+              "$ref": "#/$defs/InputKey"
+            },
+            "kind": {
+              "const": "clip_move"
+            },
+            "targetRole": {
+              "$ref": "#/$defs/RoleKey"
+            },
+            "timelineStartFrame": {
+              "$ref": "#/$defs/DecimalFrame"
+            },
+            "targetTrackRole": {
+              "$ref": "#/$defs/RoleKey"
+            },
+            "collision": {
+              "type": "string",
+              "enum": [
+                "reject",
+                "insert",
+                "overwrite"
+              ],
+              "default": "reject"
+            },
+            "linkedPolicy": {
+              "type": "string",
+              "enum": [
+                "preserve",
+                "explicit_unlinked"
+              ],
+              "default": "preserve"
+            }
+          },
+          "required": [
+            "changeKey",
+            "kind",
+            "targetRole",
+            "timelineStartFrame"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "changeKey": {
+              "$ref": "#/$defs/InputKey"
+            },
+            "kind": {
+              "const": "clip_trim"
+            },
+            "targetRole": {
+              "$ref": "#/$defs/RoleKey"
+            },
+            "sourceInTicks": {
+              "$ref": "#/$defs/UnsignedTicks"
+            },
+            "sourceOutTicks": {
+              "$ref": "#/$defs/UnsignedTicks"
+            },
+            "anchor": {
+              "type": "string",
+              "enum": [
+                "sequence_start",
+                "sequence_end"
+              ],
+              "default": "sequence_start"
+            },
+            "linkedPolicy": {
+              "type": "string",
+              "enum": [
+                "preserve",
+                "explicit_unlinked"
+              ],
+              "default": "preserve"
+            }
+          },
+          "required": [
+            "changeKey",
+            "kind",
+            "targetRole"
+          ],
+          "additionalProperties": false,
+          "anyOf": [
+            {
+              "required": [
+                "sourceInTicks"
+              ]
+            },
+            {
+              "required": [
+                "sourceOutTicks"
+              ]
+            }
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "changeKey": {
+              "$ref": "#/$defs/InputKey"
+            },
+            "kind": {
+              "const": "clip_replace_media"
+            },
+            "targetRole": {
+              "$ref": "#/$defs/RoleKey"
+            },
+            "inputKey": {
+              "$ref": "#/$defs/InputKey"
+            },
+            "preserveAnimation": {
+              "type": "boolean",
+              "default": true
+            },
+            "preserveSourceRange": {
+              "type": "boolean",
+              "default": true
+            },
+            "replacementScope": {
+              "const": "selected_instance",
+              "default": "selected_instance"
+            }
+          },
+          "required": [
+            "changeKey",
+            "kind",
+            "targetRole",
+            "inputKey"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "changeKey": {
+              "$ref": "#/$defs/InputKey"
+            },
+            "kind": {
+              "const": "clip_remove"
+            },
+            "targetRole": {
+              "$ref": "#/$defs/RoleKey"
+            },
+            "ripple": {
+              "type": "boolean",
+              "default": false
+            },
+            "linkedPolicy": {
+              "type": "string",
+              "enum": [
+                "preserve",
+                "explicit_unlinked"
+              ],
+              "default": "preserve"
+            }
+          },
+          "required": [
+            "changeKey",
+            "kind",
+            "targetRole"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "changeKey": {
+              "$ref": "#/$defs/InputKey"
+            },
+            "kind": {
+              "const": "effect_set"
+            },
+            "targetRole": {
+              "$ref": "#/$defs/RoleKey"
+            },
+            "effect": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "brightness_contrast"
+                    },
+                    "brightness": {
+                      "type": "number",
+                      "minimum": -100,
+                      "maximum": 100
+                    },
+                    "contrast": {
+                      "type": "number",
+                      "minimum": -100,
+                      "maximum": 100
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "brightness",
+                    "contrast"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "gaussian_blur"
+                    },
+                    "radiusPx": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1000
+                    },
+                    "repeatEdgePixels": {
+                      "type": "boolean",
+                      "default": true
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "radiusPx"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "lumetri_basic"
+                    },
+                    "exposureEv": {
+                      "type": "number",
+                      "minimum": -10,
+                      "maximum": 10,
+                      "default": 0
+                    },
+                    "contrast": {
+                      "type": "number",
+                      "minimum": -100,
+                      "maximum": 100,
+                      "default": 0
+                    },
+                    "saturationPercent": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 200,
+                      "default": 100
+                    },
+                    "temperatureShift": {
+                      "type": "number",
+                      "minimum": -100,
+                      "maximum": 100,
+                      "default": 0
+                    },
+                    "tintShift": {
+                      "type": "number",
+                      "minimum": -100,
+                      "maximum": 100,
+                      "default": 0
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ],
+                  "additionalProperties": false
+                }
+              ],
+              "description": "Semantic effects mapped by qualified adapters, not guessed localized component names."
+            },
+            "existingEffectPolicy": {
+              "type": "string",
+              "enum": [
+                "update_unique",
+                "create_if_absent"
+              ],
+              "default": "update_unique"
+            }
+          },
+          "required": [
+            "changeKey",
+            "kind",
+            "targetRole",
+            "effect"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "changeKey": {
+              "$ref": "#/$defs/InputKey"
+            },
+            "kind": {
+              "const": "motion"
+            },
+            "targetRole": {
+              "$ref": "#/$defs/RoleKey"
+            },
+            "property": {
+              "type": "string",
+              "enum": [
+                "positionXNormalized",
+                "positionYNormalized",
+                "scalePercent",
+                "rotationDegrees",
+                "opacityPercent"
+              ]
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "static",
+                "replace_keyframes"
+              ]
+            },
+            "value": {
+              "type": "number",
+              "minimum": -360000,
+              "maximum": 360000
+            },
+            "keyframes": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "frame": {
+                    "$ref": "#/$defs/DecimalFrame"
+                  },
+                  "value": {
+                    "type": "number",
+                    "minimum": -360000,
+                    "maximum": 360000
+                  },
+                  "interpolation": {
+                    "type": "string",
+                    "enum": [
+                      "linear",
+                      "hold"
+                    ],
+                    "default": "linear"
+                  }
+                },
+                "required": [
+                  "frame",
+                  "value"
+                ],
+                "additionalProperties": false
+              },
+              "minItems": 1,
+              "maxItems": 10000
+            }
+          },
+          "required": [
+            "changeKey",
+            "kind",
+            "targetRole",
+            "property",
+            "mode"
+          ],
+          "additionalProperties": false,
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "mode": {
+                    "const": "static"
+                  }
+                },
+                "required": [
+                  "mode"
+                ]
+              },
+              "then": {
+                "required": [
+                  "value"
+                ],
+                "not": {
+                  "required": [
+                    "keyframes"
+                  ]
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "mode": {
+                    "const": "replace_keyframes"
+                  }
+                },
+                "required": [
+                  "mode"
+                ]
+              },
+              "then": {
+                "required": [
+                  "keyframes"
+                ],
+                "not": {
+                  "required": [
+                    "value"
+                  ]
+                }
+              }
+            }
+          ],
+          "description": "Clip-local timeline frames at recipe frameRate. Normalizer enforces property-specific bounds; only the named property is replaced."
+        },
+        {
+          "type": "object",
+          "properties": {
+            "changeKey": {
+              "$ref": "#/$defs/InputKey"
+            },
+            "kind": {
+              "const": "title_text"
+            },
+            "targetRole": {
+              "$ref": "#/$defs/RoleKey"
+            },
+            "text": {
+              "type": "string",
+              "minLength": 0,
+              "maxLength": 20000
+            },
+            "preserveAnimation": {
+              "type": "boolean",
+              "default": true
+            }
+          },
+          "required": [
+            "changeKey",
+            "kind",
+            "targetRole",
+            "text"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "changeKey": {
+              "$ref": "#/$defs/InputKey"
+            },
+            "kind": {
+              "const": "audio_gain"
+            },
+            "targetRole": {
+              "$ref": "#/$defs/RoleKey"
+            },
+            "gainDb": {
+              "type": "number",
+              "minimum": -96,
+              "maximum": 24
+            }
+          },
+          "required": [
+            "changeKey",
+            "kind",
+            "targetRole",
+            "gainDb"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "changeKey": {
+              "$ref": "#/$defs/InputKey"
+            },
+            "kind": {
+              "const": "transition"
+            },
+            "leftRole": {
+              "$ref": "#/$defs/RoleKey"
+            },
+            "rightRole": {
+              "$ref": "#/$defs/RoleKey"
+            },
+            "transition": {
+              "type": "string",
+              "enum": [
+                "cross_dissolve",
+                "dip_to_black",
+                "constant_power",
+                "constant_gain"
+              ]
+            },
+            "durationFrames": {
+              "$ref": "#/$defs/PositiveFrame"
+            },
+            "insufficientHandles": {
+              "type": "string",
+              "enum": [
+                "error",
+                "shorten"
+              ],
+              "default": "error"
+            }
+          },
+          "required": [
+            "changeKey",
+            "kind",
+            "leftRole",
+            "rightRole",
+            "transition",
+            "durationFrames"
+          ],
+          "additionalProperties": false
+        }
+      ],
+      "description": "Closed semantic changes. Preserve declared array order; unique changeKey required; all roles uniquely resolve from roleManifest."
+    },
+    "pr.project_revision.v1": {
+      "type": "object",
+      "properties": {
+        "roleManifest": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "roleManifest"
+          ],
+          "default": "auto",
+          "description": "auto: prepare creates and persists exact source-bound role mappings. roleManifest: load inputs.roleManifest. Neither mode permits first-name/index matching."
+        },
+        "targetSequenceRole": {
+          "$ref": "#/$defs/RoleKey"
+        },
+        "frameRate": {
+          "$ref": "#/$defs/FrameRate"
+        },
+        "changes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RevisionChange"
+          },
+          "minItems": 1,
+          "maxItems": 512
+        },
+        "missingRolePolicy": {
+          "const": "error",
+          "default": "error"
+        },
+        "preserveUnchangedClips": {
+          "const": true,
+          "default": true
+        }
+      },
+      "required": [
+        "targetSequenceRole",
+        "frameRate",
+        "changes"
+      ],
+      "additionalProperties": false,
+      "description": "Required input: project; roleManifest input is required only in explicit roleManifest mode. Auto mode persists exact bindings during prepare. Replacement input keys must be explicit request inputs. Auto-prepared clip-source identities may use persisted authorized source bindings. frameRate must equal the target sequence rate."
+    },
+    "TimelinePlacement": {
+      "type": "object",
+      "properties": {
+        "startFrame": {
+          "$ref": "#/$defs/DecimalFrame"
+        },
+        "durationFrames": {
+          "$ref": "#/$defs/PositiveFrame"
+        },
+        "frameRate": {
+          "$ref": "#/$defs/FrameRate"
+        }
+      },
+      "required": [
+        "startFrame",
+        "durationFrames",
+        "frameRate"
+      ],
+      "additionalProperties": false,
+      "description": "Sequence frames; start+duration within selected sequence. No implicit extension."
+    },
+    "cross.ps_title_to_premiere.v1": {
+      "type": "object",
+      "properties": {
+        "roleManifest": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "roleManifest"
+          ],
+          "default": "auto",
+          "description": "auto: prepare creates and persists exact source-bound role mappings. roleManifest: load inputs.roleManifest. Neither mode permits first-name/index matching."
+        },
+        "textByRole": {
+          "$ref": "#/$defs/TextByRole"
+        },
+        "imageByRole": {
+          "$ref": "#/$defs/ImageByRole"
+        },
+        "targetSequenceRole": {
+          "$ref": "#/$defs/RoleKey"
+        },
+        "targetClipRole": {
+          "$ref": "#/$defs/RoleKey"
+        },
+        "timelinePlacement": {
+          "$ref": "#/$defs/TimelinePlacement"
+        },
+        "overlayAlpha": {
+          "type": "string",
+          "enum": [
+            "straight",
+            "premultiplied"
+          ],
+          "default": "straight"
+        },
+        "preserveAnimation": {
+          "type": "boolean",
+          "default": true
+        },
+        "replacementScope": {
+          "const": "selected_instance",
+          "default": "selected_instance"
+        },
+        "missingRolePolicy": {
+          "const": "error",
+          "default": "error"
+        }
+      },
+      "required": [
+        "textByRole",
+        "targetSequenceRole",
+        "targetClipRole",
+        "timelinePlacement"
+      ],
+      "additionalProperties": false,
+      "description": "Required inputs: titleMaster, project; roleManifest input is required only in explicit roleManifest mode. Auto mode persists exact bindings during prepare. Existing targetClipRole holds animation. No mutation of other source instances; preserveAnimation requires a preserving qualified route."
+    }
+  }
+}

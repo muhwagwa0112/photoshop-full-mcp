@@ -1,0 +1,1731 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://adobe-mcp.local/contracts/operation-results.schema.json",
+  "title": "Proposed closed domain result schemas",
+  "description": "Registry dataSchemaId selects exactly one $defs result; no generic catch-all operation output. Nested host references/evidence/resources use canonical receipt contract. New operations must add a strict result schema before advertisement.",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/ps.document_info.v1"
+    },
+    {
+      "$ref": "#/$defs/ps.layer_change.v1"
+    },
+    {
+      "$ref": "#/$defs/evidence.capture.v1"
+    },
+    {
+      "$ref": "#/$defs/media.import.v1"
+    },
+    {
+      "$ref": "#/$defs/pr.timeline_edit.v1"
+    },
+    {
+      "$ref": "#/$defs/pr.cut_map.v1"
+    },
+    {
+      "$ref": "#/$defs/transcript.words.v1"
+    },
+    {
+      "$ref": "#/$defs/pr.captions.v1"
+    },
+    {
+      "$ref": "#/$defs/audio.measurement.v1"
+    },
+    {
+      "$ref": "#/$defs/pr.parameter_change.v1"
+    },
+    {
+      "$ref": "#/$defs/export.completed.v1"
+    },
+    {
+      "$ref": "#/$defs/query.inventory.v1"
+    },
+    {
+      "$ref": "#/$defs/batch.completed.v1"
+    },
+    {
+      "$ref": "#/$defs/project.close.v1"
+    },
+    {
+      "$ref": "#/$defs/roles.manifest.v1"
+    },
+    {
+      "$ref": "#/$defs/partial.operation.v1"
+    },
+    {
+      "$ref": "#/$defs/native.batch.v1"
+    }
+  ],
+  "$defs": {
+    "tick": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "ticks": {
+          "type": "string",
+          "pattern": "^-?(0|[1-9][0-9]*)$"
+        }
+      },
+      "required": [
+        "ticks"
+      ]
+    },
+    "range": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "start": {
+          "$ref": "#/$defs/tick"
+        },
+        "end": {
+          "$ref": "#/$defs/tick"
+        }
+      },
+      "required": [
+        "start",
+        "end"
+      ]
+    },
+    "rect": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "width": {
+          "type": "number",
+          "minimum": 0
+        },
+        "height": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "width",
+        "height"
+      ]
+    },
+    "clipState": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "clipKey": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sourceAssetId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sourceRange": {
+          "$ref": "#/$defs/range"
+        },
+        "timelineRange": {
+          "$ref": "#/$defs/range"
+        },
+        "mediaType": {
+          "enum": [
+            "video",
+            "audio"
+          ]
+        },
+        "trackIndex": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "clipKey",
+        "sourceAssetId",
+        "sourceRange",
+        "timelineRange",
+        "mediaType",
+        "trackIndex"
+      ]
+    },
+    "ps.document_info.v1": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "documentId": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "width": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "mode": {
+          "enum": [
+            "RGB",
+            "CMYK",
+            "Lab",
+            "Grayscale",
+            "Bitmap",
+            "Indexed",
+            "Multichannel",
+            "Duotone"
+          ]
+        },
+        "bitDepth": {
+          "enum": [
+            1,
+            8,
+            16,
+            32
+          ]
+        },
+        "resolutionPpi": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "iccProfile": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "layerCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "workingAssetId": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "documentId",
+        "width",
+        "height",
+        "mode",
+        "bitDepth",
+        "resolutionPpi",
+        "iccProfile",
+        "layerCount",
+        "workingAssetId"
+      ]
+    },
+    "ps.layer_change.v1": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "affectedLayerIds": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "minItems": 1
+        },
+        "changed": {
+          "type": "boolean"
+        },
+        "changeKind": {
+          "enum": [
+            "create",
+            "delete",
+            "rename",
+            "text",
+            "transform",
+            "mask",
+            "pixels",
+            "adjustment",
+            "smart_object",
+            "group"
+          ]
+        },
+        "bounds": {
+          "$ref": "#/$defs/rect"
+        },
+        "finalName": {
+          "type": "string",
+          "minLength": 1
+        },
+        "finalText": {
+          "type": "string"
+        },
+        "maskArtifactId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "patchArtifactId": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "affectedLayerIds",
+        "changed",
+        "changeKind"
+      ]
+    },
+    "evidence.capture.v1": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "evidenceKeys": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        },
+        "snapshotDigest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "requestedTicks": {
+          "$ref": "#/$defs/tick"
+        },
+        "resolvedTicks": {
+          "$ref": "#/$defs/tick"
+        },
+        "isProxy": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "evidenceKeys",
+        "snapshotDigest"
+      ]
+    },
+    "media.import.v1": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "inputKey": {
+                "type": "string",
+                "minLength": 1
+              },
+              "itemKey": {
+                "type": "string",
+                "minLength": 1
+              },
+              "resourceSlot": {
+                "type": "string",
+                "minLength": 1
+              },
+              "sourceAssetId": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "inputKey",
+              "itemKey",
+              "resourceSlot",
+              "sourceAssetId"
+            ]
+          },
+          "minItems": 1
+        },
+        "skippedInputKeys": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0
+        }
+      },
+      "required": [
+        "items",
+        "skippedInputKeys"
+      ]
+    },
+    "pr.timeline_edit.v1": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "changed": {
+          "type": "boolean"
+        },
+        "before": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/clipState"
+          },
+          "minItems": 0
+        },
+        "after": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/clipState"
+          },
+          "minItems": 0
+        },
+        "removedClipKeys": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0
+        },
+        "linkedClipKeys": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0
+        },
+        "rippleApplied": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "changed",
+        "before",
+        "after",
+        "removedClipKeys",
+        "linkedClipKeys",
+        "rippleApplied"
+      ]
+    },
+    "pr.cut_map.v1": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "segments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "segmentKey": {
+                "type": "string",
+                "minLength": 1
+              },
+              "sourceAssetId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "sourceRange": {
+                "$ref": "#/$defs/range"
+              },
+              "timelineRange": {
+                "$ref": "#/$defs/range"
+              },
+              "speedNumerator": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "speedDenominator": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "reverse": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "segmentKey",
+              "sourceAssetId",
+              "sourceRange",
+              "timelineRange",
+              "speedNumerator",
+              "speedDenominator",
+              "reverse"
+            ]
+          },
+          "minItems": 0
+        },
+        "mappingArtifactId": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "segments",
+        "mappingArtifactId"
+      ]
+    },
+    "transcript.words.v1": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sourceAssetId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "language": {
+          "type": "string",
+          "minLength": 1
+        },
+        "clock": {
+          "enum": [
+            "source"
+          ]
+        },
+        "words": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "word": {
+                "type": "string"
+              },
+              "range": {
+                "$ref": "#/$defs/range"
+              },
+              "confidence": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              }
+            },
+            "required": [
+              "word",
+              "range"
+            ]
+          },
+          "minItems": 0
+        },
+        "transcriptArtifactId": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "sourceAssetId",
+        "language",
+        "clock",
+        "words",
+        "transcriptArtifactId"
+      ]
+    },
+    "pr.captions.v1": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "clock": {
+          "enum": [
+            "timeline"
+          ]
+        },
+        "cues": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "cueKey": {
+                "type": "string",
+                "minLength": 1
+              },
+              "text": {
+                "type": "string"
+              },
+              "range": {
+                "$ref": "#/$defs/range"
+              }
+            },
+            "required": [
+              "cueKey",
+              "text",
+              "range"
+            ]
+          },
+          "minItems": 0
+        },
+        "nativeTrackRole": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sidecarArtifactIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0
+        }
+      },
+      "required": [
+        "clock",
+        "cues",
+        "sidecarArtifactIds"
+      ]
+    },
+    "audio.measurement.v1": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sourceAssetId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "range": {
+          "$ref": "#/$defs/range"
+        },
+        "sampleRate": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "channels": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "integratedLufs": {
+          "type": "number"
+        },
+        "truePeakDbtp": {
+          "type": "number"
+        },
+        "residualOffsetSamples": {
+          "type": "string",
+          "pattern": "^-?(0|[1-9][0-9]*)$"
+        },
+        "evidenceKey": {
+          "type": "string",
+          "minLength": 1
+        },
+        "method": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "sourceAssetId",
+        "range",
+        "sampleRate",
+        "channels",
+        "evidenceKey",
+        "method"
+      ]
+    },
+    "pr.parameter_change.v1": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "clipKey": {
+          "type": "string",
+          "minLength": 1
+        },
+        "effectMatchName": {
+          "type": "string",
+          "minLength": 1
+        },
+        "parameterMatchName": {
+          "type": "string",
+          "minLength": 1
+        },
+        "valueEncoding": {
+          "enum": [
+            "native",
+            "linear_amplitude",
+            "decibels",
+            "normalized",
+            "percent"
+          ]
+        },
+        "requestedValue": {
+          "oneOf": [
+            {
+              "type": [
+                "number",
+                "string",
+                "boolean"
+              ]
+            },
+            {
+              "type": "object",
+              "properties": {
+                "x": {
+                  "type": "number"
+                },
+                "y": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "x",
+                "y"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "brightness_contrast"
+                    },
+                    "brightness": {
+                      "type": "number",
+                      "minimum": -100,
+                      "maximum": 100
+                    },
+                    "contrast": {
+                      "type": "number",
+                      "minimum": -100,
+                      "maximum": 100
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "brightness",
+                    "contrast"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "gaussian_blur"
+                    },
+                    "radiusPx": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1000
+                    },
+                    "repeatEdgePixels": {
+                      "type": "boolean",
+                      "default": true
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "radiusPx"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "lumetri_basic"
+                    },
+                    "exposureEv": {
+                      "type": "number",
+                      "minimum": -10,
+                      "maximum": 10,
+                      "default": 0
+                    },
+                    "contrast": {
+                      "type": "number",
+                      "minimum": -100,
+                      "maximum": 100,
+                      "default": 0
+                    },
+                    "saturationPercent": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 200,
+                      "default": 100
+                    },
+                    "temperatureShift": {
+                      "type": "number",
+                      "minimum": -100,
+                      "maximum": 100,
+                      "default": 0
+                    },
+                    "tintShift": {
+                      "type": "number",
+                      "minimum": -100,
+                      "maximum": 100,
+                      "default": 0
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ],
+                  "additionalProperties": false
+                }
+              ],
+              "description": "Semantic effects mapped by qualified adapters, not guessed localized component names."
+            }
+          ]
+        },
+        "nativeValue": {
+          "oneOf": [
+            {
+              "type": [
+                "number",
+                "string",
+                "boolean"
+              ]
+            },
+            {
+              "type": "object",
+              "properties": {
+                "x": {
+                  "type": "number"
+                },
+                "y": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "x",
+                "y"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "parameters": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "field": {
+                        "enum": [
+                          "brightness",
+                          "contrast",
+                          "exposureEv",
+                          "radiusPx",
+                          "repeatEdgePixels",
+                          "saturationPercent",
+                          "temperatureShift",
+                          "tintShift"
+                        ]
+                      },
+                      "parameterMatchName": {
+                        "type": "string"
+                      },
+                      "requestedValue": {
+                        "type": [
+                          "number",
+                          "string",
+                          "boolean"
+                        ]
+                      },
+                      "nativeValue": {
+                        "type": [
+                          "number",
+                          "string",
+                          "boolean"
+                        ]
+                      },
+                      "readbackValue": {
+                        "type": [
+                          "number",
+                          "string",
+                          "boolean"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "field",
+                      "parameterMatchName",
+                      "requestedValue",
+                      "nativeValue",
+                      "readbackValue"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "minItems": 1
+                }
+              },
+              "required": [
+                "parameters"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "readbackValue": {
+          "oneOf": [
+            {
+              "type": [
+                "number",
+                "string",
+                "boolean"
+              ]
+            },
+            {
+              "type": "object",
+              "properties": {
+                "x": {
+                  "type": "number"
+                },
+                "y": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "x",
+                "y"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "parameters": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "field": {
+                        "enum": [
+                          "brightness",
+                          "contrast",
+                          "exposureEv",
+                          "radiusPx",
+                          "repeatEdgePixels",
+                          "saturationPercent",
+                          "temperatureShift",
+                          "tintShift"
+                        ]
+                      },
+                      "parameterMatchName": {
+                        "type": "string"
+                      },
+                      "requestedValue": {
+                        "type": [
+                          "number",
+                          "string",
+                          "boolean"
+                        ]
+                      },
+                      "nativeValue": {
+                        "type": [
+                          "number",
+                          "string",
+                          "boolean"
+                        ]
+                      },
+                      "readbackValue": {
+                        "type": [
+                          "number",
+                          "string",
+                          "boolean"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "field",
+                      "parameterMatchName",
+                      "requestedValue",
+                      "nativeValue",
+                      "readbackValue"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "minItems": 1
+                }
+              },
+              "required": [
+                "parameters"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "keyframeTicks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/tick"
+          },
+          "minItems": 0
+        }
+      },
+      "required": [
+        "clipKey",
+        "effectMatchName",
+        "parameterMatchName",
+        "valueEncoding",
+        "requestedValue",
+        "nativeValue",
+        "readbackValue",
+        "keyframeTicks"
+      ]
+    },
+    "export.completed.v1": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "outputKeys": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        },
+        "artifactIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        },
+        "completedHostJobId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "published": {
+          "const": true
+        },
+        "verificationScope": {
+          "enum": [
+            "metadata_and_changed_regions",
+            "full_decode"
+          ]
+        }
+      },
+      "required": [
+        "outputKeys",
+        "artifactIds",
+        "published",
+        "verificationScope"
+      ]
+    },
+    "query.inventory.v1": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "resourceSlot": {
+          "type": "string",
+          "minLength": 1
+        },
+        "totalReturned": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "complete": {
+          "type": "boolean"
+        },
+        "nextCursor": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "resourceSlot",
+        "totalReturned",
+        "complete"
+      ]
+    },
+    "batch.completed.v1": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "itemKey": {
+                "type": "string",
+                "minLength": 1
+              },
+              "operationId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "status": {
+                "enum": [
+                  "SUCCEEDED",
+                  "FAILED_NO_EFFECT",
+                  "FAILED_WITH_EFFECT",
+                  "OUTCOME_UNKNOWN",
+                  "CANCELLED_NO_EFFECT",
+                  "CANCELLED_WITH_EFFECT",
+                  "NOT_ATTEMPTED"
+                ]
+              },
+              "effect": {
+                "enum": [
+                  "not_applied",
+                  "applied",
+                  "rolled_back",
+                  "partial",
+                  "unknown"
+                ]
+              },
+              "errorCode": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "itemKey",
+              "status",
+              "effect"
+            ],
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "status": {
+                      "not": {
+                        "const": "NOT_ATTEMPTED"
+                      }
+                    }
+                  }
+                },
+                "then": {
+                  "required": [
+                    "operationId"
+                  ]
+                }
+              }
+            ]
+          },
+          "minItems": 1
+        },
+        "allSucceeded": {
+          "type": "boolean"
+        },
+        "requested": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "applied": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "failed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "notAttempted": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "items",
+        "allSucceeded",
+        "requested",
+        "applied",
+        "failed",
+        "notAttempted"
+      ]
+    },
+    "project.close.v1": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "requestedProjectGuids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        },
+        "closedProjectGuids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0
+        },
+        "activeProjectGuidBefore": {
+          "type": "string",
+          "minLength": 1
+        },
+        "activeProjectGuidAfter": {
+          "type": "string",
+          "minLength": 1
+        },
+        "unsavedPolicy": {
+          "enum": [
+            "error",
+            "save_owned"
+          ]
+        }
+      },
+      "required": [
+        "requestedProjectGuids",
+        "closedProjectGuids",
+        "activeProjectGuidBefore",
+        "unsavedPolicy"
+      ]
+    },
+    "roles.manifest.v1": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "manifestAssetId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "roleKeys": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "maxItems": 512,
+          "uniqueItems": true
+        },
+        "bindingDigest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      "required": [
+        "manifestAssetId",
+        "roleKeys",
+        "bindingDigest"
+      ]
+    },
+    "partial.operation.v1": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "completedItemKeys": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "pendingItemKeys": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "evidenceKeys": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "resourceSlots": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "reasonCode": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "completedItemKeys",
+        "pendingItemKeys",
+        "evidenceKeys",
+        "resourceSlots",
+        "reasonCode"
+      ],
+      "description": "Partial result metadata only; registry must explicitly select this partial schema. Never a success result or fabricated domain properties."
+    },
+    "media.inspect.v1": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sourceAssetId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "durationTicks": {
+          "type": "string",
+          "pattern": "^-?(0|[1-9][0-9]*)$"
+        },
+        "hasVideo": {
+          "type": "boolean"
+        },
+        "hasAudio": {
+          "type": "boolean"
+        },
+        "width": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "frameRate": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "num": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "den": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "required": [
+            "num",
+            "den"
+          ]
+        },
+        "sampleRate": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "channels": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "isVfr": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "metadataArtifactId": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "sourceAssetId",
+        "durationTicks",
+        "hasVideo",
+        "hasAudio",
+        "metadataArtifactId"
+      ]
+    },
+    "audio.sync.v1": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "referenceInput": {
+          "type": "string",
+          "minLength": 1
+        },
+        "offsets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "inputKey": {
+                "type": "string",
+                "minLength": 1
+              },
+              "offsetTicks": {
+                "type": "string",
+                "pattern": "^-?(0|[1-9][0-9]*)$"
+              },
+              "residualOffsetSamples": {
+                "type": "string",
+                "pattern": "^-?(0|[1-9][0-9]*)$"
+              },
+              "sampleRate": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "confidence": {
+                "type": "number"
+              },
+              "method": {
+                "enum": [
+                  "manual",
+                  "waveform",
+                  "timecode"
+                ]
+              }
+            },
+            "required": [
+              "inputKey",
+              "offsetTicks",
+              "method"
+            ]
+          }
+        },
+        "mappingArtifactId": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "referenceInput",
+        "offsets",
+        "mappingArtifactId"
+      ]
+    },
+    "audio.analysis.v1": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sourceAssetId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "durationTicks": {
+          "type": "string",
+          "pattern": "^-?(0|[1-9][0-9]*)$"
+        },
+        "integratedLufs": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "maxTruePeakDbtp": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "silenceIntervals": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/range"
+          }
+        },
+        "metadataArtifactId": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "sourceAssetId",
+        "durationTicks",
+        "silenceIntervals",
+        "metadataArtifactId"
+      ]
+    },
+    "audio.render.v1": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sourceAssetIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "artifactId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sampleRate": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "channels": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "sourceAssetIds",
+        "artifactId"
+      ]
+    },
+    "image.mask.v1": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sourceRasterSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "sourceRegion": {
+          "$ref": "#/$defs/rect"
+        },
+        "width": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "maskArtifactId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "candidateScores": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        }
+      },
+      "required": [
+        "sourceRasterSha256",
+        "sourceRegion",
+        "width",
+        "height",
+        "maskArtifactId",
+        "candidateScores"
+      ]
+    },
+    "image.patch.v1": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sourceRasterSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "sourceRegion": {
+          "$ref": "#/$defs/rect"
+        },
+        "width": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "patchArtifactId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "alphaRule": {
+          "const": "opaque-source-repair-coverage"
+        },
+        "changesSourceAlpha": {
+          "const": false
+        }
+      },
+      "required": [
+        "sourceRasterSha256",
+        "sourceRegion",
+        "width",
+        "height",
+        "patchArtifactId",
+        "alphaRule",
+        "changesSourceAlpha"
+      ]
+    },
+    "media.frames.v1": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sourceAssetId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "artifactIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        },
+        "frames": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "artifactId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "requestedTicks": {
+                "type": "string",
+                "minLength": 1
+              },
+              "resolvedTicks": {
+                "type": "string",
+                "minLength": 1
+              },
+              "width": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "height": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "statistics": {
+                "type": "object",
+                "properties": {
+                  "space": {
+                    "const": "encoded_rgb_8bit"
+                  },
+                  "mean": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    },
+                    "minItems": 3,
+                    "maxItems": 3
+                  },
+                  "stddev": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    },
+                    "minItems": 3,
+                    "maxItems": 3
+                  },
+                  "sampleCount": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "shadowFraction": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    },
+                    "minItems": 3,
+                    "maxItems": 3
+                  },
+                  "highlightFraction": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    },
+                    "minItems": 3,
+                    "maxItems": 3
+                  }
+                },
+                "required": [
+                  "space",
+                  "mean",
+                  "stddev",
+                  "sampleCount",
+                  "shadowFraction",
+                  "highlightFraction"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "artifactId",
+              "requestedTicks",
+              "resolvedTicks",
+              "width",
+              "height"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "sourceAssetId",
+        "artifactIds"
+      ]
+    },
+    "media.conform.v1": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sourceAssetId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "artifactId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "timeMappingArtifactId": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "sourceAssetId",
+        "artifactId"
+      ]
+    },
+    "artifact.verified.v1": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "assetId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "verified": {
+          "type": "boolean"
+        },
+        "checks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "status": {
+                "enum": [
+                  "pass",
+                  "fail"
+                ]
+              },
+              "expected": {},
+              "actual": {}
+            },
+            "required": [
+              "name",
+              "status"
+            ]
+          }
+        }
+      },
+      "required": [
+        "assetId",
+        "verified",
+        "checks"
+      ]
+    },
+    "native.batch.v1": {
+      "type": "object",
+      "properties": {
+        "operationIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "kind": {
+          "enum": [
+            "audio_mix",
+            "color_match"
+          ]
+        },
+        "complete": {
+          "const": true
+        }
+      },
+      "required": [
+        "operationIds",
+        "kind",
+        "complete"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

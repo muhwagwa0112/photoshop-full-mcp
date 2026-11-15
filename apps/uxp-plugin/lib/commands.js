@@ -3,6 +3,9 @@
 const photoshop = require("photoshop");
 const { app, action, core, imaging, constants } = photoshop;
 const { PluginError } = require("./errors");
+const targets = require("./targets");
+const evidenceImaging = require("./imaging");
+const verification = require("./verification");
 const {
   getExportFolder,
   resolvePersistentEntry,
@@ -294,18 +297,8 @@ const VERIFIED_ACTIONS = Object.freeze({
   }]
 });
 
-function activeDocument() {
-  const doc = app.activeDocument;
-  if (!doc) throw new PluginError("NO_DOCUMENT", "Photoshop has no active document");
-  return doc;
-}
-
-function activeLayer() {
-  const doc = activeDocument();
-  const layers = doc.activeLayers;
-  if (!layers || !layers.length) throw new PluginError("PRECONDITION_FAILED", "No active layer");
-  return layers[0];
-}
+function activeDocument() { return targets.currentDocument(); }
+function activeLayer() { return targets.currentLayer(); }
 
 function activeTextItem() {
   const layer = activeLayer();
@@ -316,7 +309,9 @@ function activeTextItem() {
 }
 
 function compactLayer(layer) {
-  return { id: layer.id, name: layer.name, kind: String(layer.kind), visible: layer.visible, locked: layer.locked };
+  const value = { id: layer.id, name: layer.name, kind: String(layer.kind), visible: layer.visible, locked: layer.locked, opacity: Number(layer.opacity) };
+  try { if (layer.textItem) value.text = layer.textItem.contents; } catch (_) {}
+  return value;
 }
 
 function compactChannel(channel) {
@@ -354,9 +349,13 @@ function compactActionTree(actionSets) {
 
 function namedAction(setName, actionName) {
   const sets = Array.from(app.actionTree || []);
-  const set = sets.find((item) => String(item.name) === setName);
+  const matchingSets = sets.filter((item) => String(item.name) === setName);
+  if (matchingSets.length > 1) throw new PluginError("PRECONDITION_FAILED", `Action set name is ambiguous: ${setName}`);
+  const set = matchingSets[0];
   if (!set) throw new PluginError("PRECONDITION_FAILED", `Action set not found: ${setName}`);
-  const item = Array.from(set.actions || []).find((actionItem) => String(actionItem.name) === actionName);
+  const matches = Array.from(set.actions || []).filter((actionItem) => String(actionItem.name) === actionName);
+  if (matches.length > 1) throw new PluginError("PRECONDITION_FAILED", `Action name is ambiguous: ${actionName}`);
+  const item = matches[0];
   if (!item) throw new PluginError("PRECONDITION_FAILED", `Action not found: ${setName} / ${actionName}`);
   return { set, item };
 }
@@ -382,6 +381,7 @@ function namedLayerComp(name) {
   if (typeof collection.getAllByName === "function") matches = collection.getAllByName(name) || [];
   else matches = Array.from(collection).filter((item) => String(item.name) === name);
   if (!matches.length) throw new PluginError("PRECONDITION_FAILED", `Layer comp not found: ${name}`);
+  if (matches.length !== 1) throw new PluginError("PRECONDITION_FAILED", `Layer comp name is ambiguous: ${name}`);
   return matches[0];
 }
 
@@ -449,7 +449,7 @@ async function hostDescribe() {
   } catch (_) {}
   return {
     app: "Photoshop",
-    appVersion: hostInfo.version || null,
+    appVersion: hostInfo.version || app.version || null,
     locale: hostInfo.uiLocale || null,
     uxp: uxpVersions,
     apiVersion: 2,
@@ -465,10 +465,10 @@ async function hostDescribe() {
       action: { batchPlay: typeof action.batchPlay === "function" },
       core: { executeAsModal: typeof core.executeAsModal === "function" },
       imaging: {
-        getPixels: typeof imaging.getPixels === "function",
-        encodeImageData: typeof imaging.encodeImageData === "function",
-        getLayerMask: typeof imaging.getLayerMask === "function",
-        putLayerMask: typeof imaging.putLayerMask === "function",
+        getPixels: Boolean(imaging && typeof imaging.getPixels === "function"),
+        encodeImageData: Boolean(imaging && typeof imaging.encodeImageData === "function"),
+        getLayerMask: Boolean(imaging && typeof imaging.getLayerMask === "function"),
+        putLayerMask: Boolean(imaging && typeof imaging.putLayerMask === "function"),
         createLayerMask: false,
         deleteLayerMask: false
       },
@@ -585,11 +585,13 @@ async function hostDescribe() {
   };
 }
 
-async function stateGet() {
+async function stateGet(payload = {}) {
   const safe = (read, fallback = null) => {
     try { return read(); } catch (_) { return fallback; }
   };
-  const doc = safe(() => app.activeDocument);
+  let doc;
+  try { doc = payload.target ? targets.resolveTarget(payload.target).document : activeDocument(); }
+  catch (error) { if (!payload.allowMissing && payload.target) throw error; doc = null; }
   const activeLayers = doc ? safe(() => Array.from(doc.activeLayers || []), []) : [];
   const layer = activeLayers.length ? safe(() => compactLayer(activeLayers[0])) : null;
   let selectionBounds = null;
@@ -613,6 +615,7 @@ async function stateGet() {
   const pathCount = doc ? safe(() => Number(doc.pathItems && doc.pathItems.length || 0), 0) : 0;
   const exportFolderConfigured = Boolean(await getExportFolder().catch(() => null));
   return {
+    hostEpoch: targets.hostEpoch,
     documentCount: safe(() => Number(app.documents.length), 0),
     hasDocument: Boolean(doc),
     activeDocument: doc ? safe(() => compactDocument(doc)) : null,
@@ -629,37 +632,17 @@ async function stateGet() {
 }
 
 async function previewGet(payload = {}) {
-  const doc = activeDocument();
-  const maxDimension = Math.max(64, Math.min(Number(payload.maxEdge || payload.max_dimension || 512), 1024));
-  const scale = Math.min(1, maxDimension / Math.max(Number(doc.width), Number(doc.height)));
-  const targetSize = { width: Math.max(1, Math.round(Number(doc.width) * scale)), height: Math.max(1, Math.round(Number(doc.height) * scale)) };
-  const pixels = await imaging.getPixels({
-    documentID: doc.id,
-    targetSize,
-    componentSize: 8,
-    colorSpace: "RGB",
-    // JPEG cannot encode alpha. Photoshop can return RGBA for the composite
-    // after transparent-layer edits, so explicitly matte it on white.
-    applyAlpha: true
-  });
-  try {
-    if (typeof imaging.encodeImageData !== "function") {
-      return { document: compactDocument(doc), preview: null, warning: "encodeImageData is unavailable in this Photoshop runtime" };
-    }
-    const encoded = await imaging.encodeImageData({ imageData: pixels.imageData, base64: true, format: "jpeg", quality: 0.75 });
-    return {
-      document: compactDocument(doc),
-      preview: { mimeType: "image/jpeg", base64: encoded, width: targetSize.width, height: targetSize.height }
-    };
-  } finally {
-    if (pixels.imageData && typeof pixels.imageData.dispose === "function") pixels.imageData.dispose();
-  }
+  return { preview: await evidenceImaging.capture(payload) };
 }
 
 async function batchPlay(descriptors, dialog = "dontDisplay") {
   if (!Array.isArray(descriptors) || !descriptors.length) throw new PluginError("PRECONDITION_FAILED", "batchPlay descriptors must be a non-empty array");
   const safe = descriptors.map((item) => ({ ...item, _options: { ...(item._options || {}), dialogOptions: dialog } }));
-  return action.batchPlay(safe, { synchronousExecution: false, modalBehavior: "execute" });
+  const results = await action.batchPlay(safe, { synchronousExecution: false });
+  if (!Array.isArray(results) || results.length !== safe.length) throw new PluginError("HOST_ERROR", "batchPlay returned an incomplete result array", { effect: "unknown" });
+  const failed = results.findIndex((entry) => entry && (entry._obj === "error" || (typeof entry.result === "number" && entry.result < 0)));
+  if (failed >= 0) throw new PluginError("HOST_ERROR", results[failed].message || `batchPlay descriptor ${failed} failed`, { descriptorIndex: failed, hostResult: results[failed], effect: failed === 0 ? "unknown" : "partial" });
+  return results;
 }
 
 function validateFileName(name) {
@@ -1023,19 +1006,40 @@ function outputFileName(args, extension) {
 }
 
 async function resolveOutputEntry(args, extension) {
-  if (args.entry_token) return resolvePersistentEntry(args.entry_token);
+  if (args.entry_token) {
+    if (args.on_conflict !== "overwrite") throw new PluginError("OUTPUT_CONFLICT", "An existing Entry token requires explicit on_conflict=overwrite");
+    return resolvePersistentEntry(args.entry_token);
+  }
   const folder = await getExportFolder();
   if (!folder) throw new PluginError("PRECONDITION_FAILED", "Choose an export folder in the plugin panel first");
   const name = outputFileName(args, extension);
+  const policy = args.on_conflict || "error";
   const existing = await folder.getEntry(name).catch(() => null);
-  if (existing && !args.overwrite_approved) throw new PluginError("APPROVAL_REQUIRED", `File already exists: ${name}`);
-  return existing || folder.createFile(name, { overwrite: false });
+  if (existing && policy === "error") throw new PluginError("OUTPUT_CONFLICT", `File already exists: ${name}`);
+  if (existing && policy === "overwrite") {
+    if (args.expected_existing_sha256) {
+      const bytes = await readEntryBinary(existing);
+      const actual = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)), (byte) => byte.toString(16).padStart(2, "0")).join("");
+      if (actual !== args.expected_existing_sha256) throw new PluginError("OUTPUT_CONFLICT", "Existing output differs from expected SHA-256");
+    }
+    return existing;
+  }
+  if (!existing) return folder.createFile(name, { overwrite: false });
+  const stem = name.slice(0, -(extension.length + 1));
+  for (let index = 1; index <= 10000; index++) {
+    const candidate = `${stem}-v${index}.${extension}`;
+    if (await folder.getEntry(candidate).catch(() => null)) continue;
+    try { return await folder.createFile(candidate, { overwrite: false }); }
+    catch (error) { if (!await folder.getEntry(candidate).catch(() => null)) throw error; }
+  }
+  throw new PluginError("OUTPUT_CONFLICT", "No available versioned output filename");
 }
 
 async function saveDocumentCopy(doc, entry, format, args) {
   if (format === "png") await doc.saveAs.png(entry, {}, true);
   else if (format === "jpg") await doc.saveAs.jpg(entry, { quality: Math.max(0, Math.min(12, Number(args.quality ?? 10))) }, true);
-  else await doc.saveAs.psd(entry, {}, true);
+  else if (format === "psb") await doc.saveAs.psb(entry, { embedColorProfile: true }, true);
+  else await doc.saveAs.psd(entry, { embedColorProfile: true }, true);
 }
 
 async function executeStable(commandId, args = {}, context = {}) {
@@ -1089,7 +1093,7 @@ async function executeStable(commandId, args = {}, context = {}) {
     case "document.export": {
       const doc = activeDocument();
       const format = String(args.format || "png").toLowerCase();
-      if (!["png", "jpg", "jpeg", "psd"].includes(format)) throw new PluginError("UNSUPPORTED", `Unsupported export format: ${format}`);
+      if (!["png", "jpg", "jpeg", "psd", "psb"].includes(format)) throw new PluginError("UNSUPPORTED", `Unsupported export format: ${format}`);
       const normalized = format === "jpeg" ? "jpg" : format;
       const configuredFolder = args.entry_token ? null : await getExportFolder();
       if (args.entry_token || configuredFolder) {
@@ -1108,7 +1112,7 @@ async function executeStable(commandId, args = {}, context = {}) {
         const uploaded = await context.uploadExport(binary, {
           name,
           format: normalized,
-          overwriteApproved: args.overwrite_approved === true
+          onConflict: args.on_conflict || "error"
         });
         return { ...uploaded, name, format: normalized, destination: "default_export_folder" };
       } finally {
@@ -1760,35 +1764,59 @@ async function executeStable(commandId, args = {}, context = {}) {
   }
 }
 
-async function inModal(commandId, fn, suspendHistory = true) {
-  let lastError;
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    try {
-      return await core.executeAsModal(async (executionContext) => {
-        const docBefore = app.activeDocument;
-        let suspension = null;
-        if (suspendHistory && docBefore && executionContext.hostControl && typeof executionContext.hostControl.suspendHistory === "function") {
-          suspension = await executionContext.hostControl.suspendHistory({ documentID: docBefore.id, name: `MCP: ${commandId}` });
+async function inModal(commandId, fn, suspendHistory = true, context = {}, target) {
+  let entered = false;
+  const [major, minor] = String(app.version || "0.0").split(".").map(Number);
+  const options = { commandName: `Photoshop MCP: ${commandId}`, interactive: false };
+  if (major > 25 || (major === 25 && minor >= 10)) options.timeOut = 5;
+  try {
+    return await core.executeAsModal(async (executionContext) => {
+      entered = true;
+      if (context.bindModal) context.bindModal(executionContext);
+      if (context.throwIfCancelled) context.throwIfCancelled();
+      return targets.withTarget(target, async (resolved) => {
+        let suspension = null, committed = false, result;
+        const beforeHistoryId = resolved.document && resolved.document.activeHistoryState && resolved.document.activeHistoryState.id;
+        if (suspendHistory && resolved.document && executionContext.hostControl && typeof executionContext.hostControl.suspendHistory === "function") {
+          suspension = await executionContext.hostControl.suspendHistory({ documentID: resolved.document.id, name: `MCP: ${commandId}` });
         }
-        let committed = false;
         try {
-          const result = await fn();
+          result = await fn(executionContext);
           committed = true;
           return result;
+        } catch (error) {
+          if (suspension) {
+            try {
+              await executionContext.hostControl.resumeHistory(suspension, false);
+              suspension = null;
+              if (!error.details || error.details.effect !== "not_applied") {
+                error.details = { ...(error.details || {}), effect: "rolled_back" };
+                if (context.markEffect) context.markEffect("rolled_back");
+              }
+            } catch (rollbackError) {
+              error.details = { ...(error.details || {}), effect: "unknown", rollbackError: String(rollbackError) };
+              suspension = null;
+            }
+          }
+          throw error;
         } finally {
-          if (suspension && executionContext.hostControl && typeof executionContext.hostControl.resumeHistory === "function") {
+          if (suspension) {
             await executionContext.hostControl.resumeHistory(suspension, committed);
+            if (result && typeof result === "object" && committed) {
+              const afterHistoryId = resolved.document.activeHistoryState && resolved.document.activeHistoryState.id;
+              result.undo = typeof beforeHistoryId === "number" && typeof afterHistoryId === "number" && beforeHistoryId !== afterHistoryId
+                ? { available: true, historyStates: 1, documentId: resolved.document.id } : { available: false };
+            }
           }
         }
-      }, { commandName: `Photoshop MCP: ${commandId}`, interactive: false, timeOut: 5 });
-    } catch (error) {
-      lastError = error;
-      const message = String(error && error.message ? error.message : error).toLowerCase();
-      if (attempt >= 2 || (!message.includes("modal") && !message.includes("busy"))) throw error;
-      await new Promise((resolveDelay) => setTimeout(resolveDelay, 100 * (attempt + 1)));
-    }
+      });
+    }, options);
+  } catch (error) {
+    // Retry is never allowed after the callback began: a later modal-looking
+    // exception can follow a real edit. Acquisition is the only no-effect case.
+    if (!entered) error.details = { ...(error.details || {}), effect: "not_applied" };
+    throw error;
   }
-  throw lastError;
 }
 
 function enqueueUserJob(payload, context, kind, instruction) {
@@ -1822,16 +1850,48 @@ async function commandExecute(payload = {}, context = {}) {
     return enqueueUserJob({ ...payload, commandId }, context, "user_assisted", USER_ASSISTED_INSTRUCTIONS[commandId]);
   }
   validateCoreArgs(commandId, payload.args || {});
-  const before = await stateGet();
-  const execute = () => executeStable(commandId, payload.args || {}, context);
-  const result = MUTATING_COMMANDS.has(commandId)
-    ? await inModal(commandId, execute, HISTORY_SUSPEND_COMMANDS.has(commandId))
-    : await execute();
-  const after = await stateGet();
-  const undo = commandId === "document.open_default"
-    ? { available: true, action: "close_without_save" }
-    : (MUTATING_COMMANDS.has(commandId) ? { available: true, historySteps: 1 } : { available: false });
-  return { commandId, result, before, after, undo };
+  if (payload.minHostVersion) {
+    const actual = String(app.version || "0").split(".").map(Number), minimum = String(payload.minHostVersion).split(".").map(Number);
+    for (let index = 0; index < 3; index++) {
+      if ((actual[index] || 0) > (minimum[index] || 0)) break;
+      if ((actual[index] || 0) < (minimum[index] || 0)) throw new PluginError("CAPABILITY_UNAVAILABLE", `Command requires Photoshop ${payload.minHostVersion} or later`, { effect: "not_applied" });
+    }
+  }
+  const mode = payload.verification || "state";
+  if (!["state", "preview", "none"].includes(mode)) throw new PluginError("PRECONDITION_FAILED", "Unknown verification mode");
+  const mutating = MUTATING_COMMANDS.has(commandId);
+  const needsDocument = payload.prerequisites === undefined ? !["document.create", "document.open_default"].includes(commandId) : payload.prerequisites.some(item => ["document", "layer", "selection", "channel", "path", "text_layer"].includes(item));
+  const target = payload.target || (needsDocument ? targets.captureTarget(context.serverId) : undefined);
+  const execute = async () => {
+    if (context.throwIfCancelled) context.throwIfCancelled();
+    const needState = mode !== "none" || (payload.prerequisites || []).length > 0;
+    const before = needState ? await stateGet({ ...(target ? { target } : {}), allowMissing: !target }) : undefined;
+    for (const prerequisite of payload.prerequisites || []) {
+      if (prerequisite === "document" && !before.hasDocument) throw new PluginError("NO_DOCUMENT", "Document prerequisite failed", { effect: "not_applied" });
+      if (prerequisite === "layer" && !before.activeLayer) throw new PluginError("PRECONDITION_FAILED", "Layer prerequisite failed", { effect: "not_applied" });
+      if (prerequisite === "selection" && !before.hasSelection) throw new PluginError("PRECONDITION_FAILED", "Selection prerequisite failed", { effect: "not_applied" });
+      if (prerequisite === "text_layer" && (!before.activeLayer || typeof before.activeLayer.text !== "string")) throw new PluginError("PRECONDITION_FAILED", "Text layer prerequisite failed", { effect: "not_applied" });
+      if (prerequisite === "channel" && !before.channelCount) throw new PluginError("PRECONDITION_FAILED", "Channel prerequisite failed", { effect: "not_applied" });
+      if (prerequisite === "path" && !before.pathCount) throw new PluginError("PRECONDITION_FAILED", "Path prerequisite failed", { effect: "not_applied" });
+      if (["online", "entitlement", "model"].includes(prerequisite)) throw new PluginError("ENTITLEMENT_UNAVAILABLE", `Cannot prove required runtime ${prerequisite}`, { effect: "not_applied" });
+    }
+    if (payload.expectedBefore) await verification.assertExpected(payload.expectedBefore, verification.projection(target));
+    if (mutating && context.markEffect) context.markEffect("partial");
+    const result = await executeStable(commandId, payload.args || {}, context);
+    if (mutating && context.markEffect) context.markEffect("applied");
+    const afterTarget = ["document.create", "document.open_default", "document.duplicate"].includes(commandId) && result && result.id ? { documentId: result.id } : commandId === "layer.delete" && target ? { documentId: target.documentId } : target;
+    const after = mode !== "none" ? await stateGet({ ...(afterTarget ? { target: afterTarget } : {}), allowMissing: commandId === "document.close" }) : undefined;
+    const checks = mode === "none" ? [] : verification.commandAssertions(commandId, payload.args || {}, before, after, result);
+    if (checks.some((check) => check.status === "fail")) throw new PluginError("VERIFICATION_FAILED", "Command postcondition failed", { checks, effect: mutating ? "applied" : "not_applied" });
+    const evidence = mode === "preview" && commandId !== "document.close" ? [await evidenceImaging.capture({ target: afterTarget, maxEdge: 1024, format: "png" })] : [];
+    return { commandId, result, ...(mode === "none" ? {} : { before, after }),
+      verification: { mode, checks, visualJudgment: "not_performed" }, ...(evidence.length ? { evidence } : {}), undo: { available: false } };
+  };
+  // Read-only commands still bind explicit document/layer IDs. Imaging runs
+  // modally without a history suspension.
+  return mutating || mode === "preview"
+    ? inModal(commandId, execute, mutating && HISTORY_SUSPEND_COMMANDS.has(commandId), context, target)
+    : targets.withTarget(target, execute, false);
 }
 
 async function approvalRequest(payload = {}, context = {}) {
@@ -1852,7 +1912,7 @@ function onApprovalRequest(listener) {
 
 function markApprovalJob(jobId, status) {
   const job = jobs.get(jobId);
-  if (job) {
+  if (job && !["completed", "cancelled", "failed"].includes(job.status)) {
     job.status = status;
     job.updatedAt = new Date().toISOString();
   }
@@ -1899,9 +1959,10 @@ function validateAdvancedPayload(payload = {}) {
   return descriptors;
 }
 
-async function advancedBatchPlay(payload = {}) {
+async function advancedBatchPlay(payload = {}, context = {}) {
   const descriptors = validateAdvancedPayload(payload);
-  return inModal("advanced.batchplay", () => batchPlay(descriptors, "dontDisplay"), true);
+  const target = payload.target || targets.captureTarget(context.serverId);
+  return inModal("advanced.batchplay", async () => { if (context.markEffect) context.markEffect("partial"); const result = await batchPlay(descriptors, "dontDisplay"); if (context.markEffect) context.markEffect("applied"); return { result }; }, true, context, target);
 }
 
 async function jobResume(payload = {}) {
@@ -1925,6 +1986,7 @@ async function jobCancel(payload = {}) {
   const jobId = payload.jobId || payload.job_id;
   const job = jobs.get(jobId);
   if (!job) throw new PluginError("PRECONDITION_FAILED", `Unknown job: ${jobId || "(missing)"}`);
+  if (["completed", "failed", "cancelled"].includes(job.status)) return job;
   job.status = "cancelled";
   job.cancelledAt = new Date().toISOString();
   return job;
@@ -1933,18 +1995,23 @@ async function jobCancel(payload = {}) {
 async function dispatch(kind, payload, context) {
   switch (kind) {
     case "host.describe": return hostDescribe();
-    case "state.get": return stateGet();
+    case "state.get": return stateGet(payload);
+    case "target.capture": return targets.captureTarget(context && context.serverId);
+    case "target.inspect": return inModal("target.inspect", async () => verification.projection(payload.target), false, context, payload.target);
     // Photoshop 25+ requires imaging.getPixels/encodeImageData to run inside
     // a modal scope even though this route is read-only. Do not suspend
     // history: preview generation must not create an undo entry.
-    case "preview.get": return inModal("preview.get", () => previewGet(payload), false);
+    case "preview.get": return inModal("preview.get", () => previewGet(payload), false, context, payload.target);
     case "command.execute": return commandExecute(payload, context);
-    case "advanced.batchplay": return advancedBatchPlay(payload);
+    case "advanced.batchplay": return advancedBatchPlay(payload, context);
     case "approval.request": return approvalRequest(payload, context);
     case "job.resume": return jobResume(payload);
     case "job.cancel": return jobCancel(payload);
+    case "automation.capabilities": return require("./automation").capabilities();
+    case "automation.execute": return require("./automation").execute(payload, context, { inModal, batchPlay, executeStable });
+    case "operation.verify": return inModal("operation.verify", async () => verification.evaluate(payload.assertions || [], verification.projection(payload.target)), false, context, payload.target);
     default: throw new PluginError("UNSUPPORTED", `Unsupported request kind: ${kind}`);
   }
 }
 
-module.exports = { dispatch, hostDescribe, stateGet, previewGet, commandExecute, advancedBatchPlay, validateAdvancedPayload, onApprovalRequest, markApprovalJob, validateCoreArgs };
+module.exports = { dispatch, hostDescribe, stateGet, previewGet, commandExecute, advancedBatchPlay, validateAdvancedPayload, onApprovalRequest, markApprovalJob, validateCoreArgs, batchPlay, inModal };
