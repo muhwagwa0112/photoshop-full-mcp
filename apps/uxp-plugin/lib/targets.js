@@ -20,7 +20,7 @@ function allLayers(doc) {
 function findDocument(id) { return Array.from(app.documents || []).find((doc) => doc.id === id); }
 function resolveTarget(target, optional = false) {
   if (target && target.host && target.host.hostEpoch !== hostEpoch) throw new PluginError("STALE_TARGET", "Target belongs to a previous Photoshop host epoch", { effect: "not_applied" });
-  const id = target && target.documentId;
+  const id = target ? target.documentId : undefined;
   const doc = id === undefined ? app.activeDocument : findDocument(id);
   if (!doc) {
     if (optional && !target) return { document: null, layers: [] };
