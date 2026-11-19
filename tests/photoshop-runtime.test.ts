@@ -146,6 +146,17 @@ function uxpModules(photoshop: Record<string, unknown>) {
   return (name: string) => load(resolve(`apps/uxp-plugin/lib/${name}.js`));
 }
 
+test("UXP uses the active document for a null target and honors explicit document IDs", () => {
+  const active = { id: 1, layers: [], activeLayers: [] };
+  const other = { id: 2, layers: [], activeLayers: [] };
+  const app = { documents: [active, other], activeDocument: active };
+  const targets = uxpModules({ app, constants: {} })("targets");
+
+  assert.equal(targets.currentDocument(), active);
+  assert.equal(targets.resolveTarget({ documentId: other.id }).document, other);
+  assert.equal(app.activeDocument, active);
+});
+
 test("UXP binds IDs across focus changes, rejects error descriptors, and reports cancel-too-late truthfully", async () => {
   const layer = (id: number) => ({ id, name: "same name", kind: "normal", visible: true, opacity: 100, bounds: { left: 0, top: 0, right: 10, bottom: 10 } });
   const firstLayer = layer(11), secondLayer = layer(22);
